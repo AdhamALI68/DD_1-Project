@@ -1,5 +1,10 @@
-#include <bits/stdc++.h>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <unordered_map>
+#include <vector>
 using namespace std;
+
 using LogicFunction = function<bool(const vector<bool>&, int)>;
 
 // Define basic logic functions with delay parameter
@@ -72,12 +77,26 @@ void loadLibrary(const string& filename) {
     }
     string line;
     while (getline(file, line)) {
-        stringstream ss(line);
-        string name,b,c;
-        int num_inputs, delay_ps;
-        ss >> name >> num_inputs >> b>>c>>delay_ps;
-        component_library[name] = {num_inputs, delay_ps};
+    std::stringstream ss(line);
+    std::string firstWord, lastWord, word;
+
+    // Extract the first word
+    ss >> firstWord;
+
+    // Extract the last word
+    while (ss >> word) {
+        lastWord = word; // Overwrite lastWord until the last word is reached
     }
+    int lastInteger = std::stoi(lastWord);
+cout<<firstWord<<" "<<lastWord;
+        component_library[firstWord] = {firstWord[0], lastInteger};
+    }
+
+//     for (const auto& x : component_library) {
+//    cout << "Component Name: " << x.first << endl;
+//    cout << "Number of Inputs: " << x.second.first << endl;
+//    cout << "Delay (ps): " << x.second.second << endl;
+//}
     file.close();
 }
 
@@ -91,7 +110,10 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
     string line;
     bool reading_inputs = false;
     bool reading_components = false;
-    while (getline(file, line)) {
+    line.pop_back();
+    while (getline(file, line))
+    {
+        line.pop_back();
         if (line == "INPUTS:") {
             reading_inputs = true;
             continue;
@@ -117,45 +139,6 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
     file.close();
 }
 
-double simulate_circuit(const vector<vector<string>>& components, unordered_map<string, int>& input_map) {
-    int total_delay = 0;
-
-    // Iterate through components
-    for (const auto& component : components) {
-        string gate_name = component[0];
-        string function_name = component[1];
-        string output_wire = component[2];
-
-        // Get delay and logic function for the component
-        int delay = component_library[function_name].delay_ps;
-        LogicFunction logic_function = logic_functions[function_name];
-
-        // Extract input wires
-        vector<string> input_wires;
-        for (size_t i = 3; i < component.size(); ++i) {
-            if (component[i] != ",") {
-                input_wires.push_back(component[i]);
-            }
-        }
-
-        // Get input values from input_map
-        vector<bool> inputs;
-        for (const auto& input_wire : input_wires) {
-            inputs.push_back(input_map[input_wire]);
-        }
-
-        // Perform logic operation and update output wire value in input_map
-        bool result = logic_function(inputs, delay);
-        input_map[output_wire] = result;
-
-        // Accumulate delay
-        total_delay += delay;
-    }
-
-    return total_delay;
-}
-
-
 int main() {
     loadLibrary("lib.txt");
 
@@ -166,7 +149,7 @@ int main() {
     vector<string> inputs;
     vector<vector<string>> components;
     parse_cir_file("cir.txt", inputs, components);
-    
+
 
     // Store inputs in a map and initialize to zero
     unordered_map<string, int> input_map;
@@ -186,8 +169,8 @@ int main() {
     // Printing the input map
     unordered_map<string, int> operation;
     operation=component_functions;
-    
-  
+
+    unordered_map<string, int> delay_map; // Map to store propagation delay for each wire
 
     for (int i = 0; i < components.size(); i++)
     {
@@ -195,50 +178,75 @@ int main() {
         string gatename="";
         vector<string>in;
         vector<bool>inp;
+        int max_delay = 0; // Initialize the maximum delay for this component
         for (int j = 0; j <components[i].size(); j++)
         {
             if(operation[components[i][j]]!=0){
                 if(gatename==""){gatename=components[i][j]; gatename.pop_back(); }
-               output=components[i][j+1];          j++; continue; }
+                output=components[i][j+1];          j++; continue; }
 
-               if(output!=""){
+            if(output!=""){
                 if(components[i][j][components[i][j].length()-1]==','){components[i][j].erase(components[i][j].length()-1);}
                 in.push_back(components[i][j]);
                 if(input_map.find(components[i][j])==input_map.end()){
                     input_map[components[i][j]]=0;}
-                    
-                }
 
-                    }
-                    for (int k = 0; k < in.size(); k++)
-                    {
-                       inp.push_back(input_map[in[k]]);
-                    }
-                    string z=gatename+',';
-                    output.pop_back();
-                    if(gatename=="NOT"){ input_map[output]=logic_NOT(inp,component_library[z].delay_ps);}
-                    gatename.pop_back();
-                    if(gatename=="AND"){ input_map[output]=logic_AND(inp,component_library[z].delay_ps);}
-                    if(gatename=="OR"){ input_map[output]=logic_OR(inp,component_library[z].delay_ps);}
-                    if(gatename=="XOR"){ input_map[output]=logic_XOR(inp,component_library[z].delay_ps);}
+            }
+        }
+        for (int k = 0; k < in.size(); k++)
+        {
+            inp.push_back(input_map[in[k]]);
+            // Update the maximum delay for this component based on the input wire delays
+            if (delay_map.find(in[k]) != delay_map.end()) {
+                max_delay = max(max_delay, delay_map[in[k]]);
+            }
+        }
+        string z=gatename+',';
+        output.pop_back();
+        cout<<"out "<<output<<"\n";
 
-                    in.clear();
+        if(gatename=="NOT"){
+            input_map[output]=logic_NOT(inp,component_library[z].delay_ps);
+            delay_map[output] = max_delay + component_library[z].delay_ps;
+        }
+        gatename.pop_back();
+        if(gatename=="AND"){
+            input_map[output]=logic_AND(inp,component_library[z].delay_ps);
+            delay_map[output] = max_delay + component_library[z].delay_ps;
+        }
+        if(gatename=="OR"){
+            input_map[output]=logic_OR(inp,component_library[z].delay_ps);
+            delay_map[output] = max_delay + component_library[z].delay_ps;
+        }
+        if(gatename=="XOR"){
+            cout<<"out   " <<component_library[z].delay_ps<<"\n";
+            input_map[output]=logic_XOR(inp,component_library[z].delay_ps);
+            delay_map[output] = max_delay + component_library[z].delay_ps;
+        }
+
+         if(gatename=="NAND"){
+            cout<<"out   " <<component_library[z].delay_ps<<"\n";
+            input_map[output]=logic_XOR(inp,component_library[z].delay_ps);
+            delay_map[output] = max_delay + component_library[z].delay_ps;
+        }
+
+        in.clear();
         cout<<"\n";
     }
-    
-        cout << "Inputs:" << endl;
+
+    cout << "Inputs:" << endl;
 
     // Printing the component functions and number of parameters
-      for (const auto& x: input_map) {
+    for (const auto& x: input_map) {
         cout << x.first << ": " << x.second << endl;
     }
-    // for (const auto&x : component_functions) {
-    //     cout << x.first << ": " << x.second << " parameters" << endl;
-    // }
 
+    cout << "Propagation Delays:" << endl;
 
-
-
+    // Printing the propagation delays for each wire
+    for (const auto& x: delay_map) {
+        cout << x.first << ": " << x.second << " ps" << endl;
+    }
 
     return 0;
 }
