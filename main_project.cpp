@@ -185,12 +185,10 @@ string output=std::get<1>(vec[i]);
             input_map[output]=logic_OR(inp,component_library[z].delay_ps);
         }
         if(gatename=="XOR"){
-            cout<<"out   " <<component_library[z].delay_ps<<"\n";
             input_map[output]=logic_XOR(inp,component_library[z].delay_ps);
         }
 
          if(gatename=="NAND"){
-            cout<<"out   " <<component_library[z].delay_ps<<"\n";
             input_map[output]=logic_XOR(inp,component_library[z].delay_ps);
         }
 
@@ -212,7 +210,7 @@ vector<tuple<string,string,vector<bool>>>vec;
     // Store inputs in a map and initialize to zero
     unordered_map<string, int> input_map;
     for (const string& input : inputs) {
-        input_map[input] = 1;
+        input_map[input] = 0;
     }
 
     // Store component functions and number of parameters
@@ -291,7 +289,6 @@ vector<tuple<string,string,vector<bool>>>vec;
         in.clear();
         cout<<"\n";
     }
-
     cout << "Inputs:" << endl;
 
     // Printing the component functions and number of parameters
@@ -311,8 +308,19 @@ vector<tuple<string,string,vector<bool>>>vec;
     // Printing out the vector to verify the results
     for (const auto& reading : readings) {
         cout << get<0>(reading) << ", " << get<1>(reading) << ", " << get<2>(reading) << endl;
-    }
+        string c="";
+        c+=get<1>(reading);
+        input_map[c]=get<2>(reading);
+        funccall(vec,input_map);
+      cout << "Outputs:" << endl;
+      cout<<"iteration beign "<<"\n \n ";
 
+    // Printing the component functions and number of parameters
+    for (const auto& x: input_map) {
+        cout << x.first << ": " << x.second << endl;
+    }
+    cout<<"iteration done "<<"\n \n \n";
+    }
 
 
     return 0;
