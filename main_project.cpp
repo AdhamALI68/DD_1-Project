@@ -304,23 +304,24 @@ vector<tuple<string,string,vector<bool>>>vec;
     }
 
     vector<tuple<int, char, int>> readings = readFromFile("Circuit 3/Circuit 3.stim");
-
-    // Printing out the vector to verify the results
-    for (const auto& reading : readings) {
-        cout << get<0>(reading) << ", " << get<1>(reading) << ", " << get<2>(reading) << endl;
-        string c="";
-        c+=get<1>(reading);
-        input_map[c]=get<2>(reading);
-        funccall(vec,input_map);
-      cout << "Outputs:" << endl;
-      cout<<"iteration beign "<<"\n \n ";
+// printing in external file
+   for (const auto& reading : readings) {
+    ofstream outFile("output.sim"); // Create an ofstream object and open "output.txt" for writing
+    outFile << get<0>(reading) << ", " << get<1>(reading) << ", " << get<2>(reading) << endl;
+    string c="";
+    c+=get<1>(reading);
+    input_map[c]=get<2>(reading);
+    funccall(vec,input_map);
+    outFile << "Outputs:" << endl;
+    outFile << "iteration begin " << "\n \n ";
 
     // Printing the component functions and number of parameters
     for (const auto& x: input_map) {
-        cout << x.first << ": " << x.second << endl;
+        outFile << x.first << ": " << x.second << endl;
     }
-    cout<<"iteration done "<<"\n \n \n";
-    }
+    outFile << "iteration done " << "\n \n \n";
+    outFile.close(); // Close the file
+}
 
 
     return 0;
