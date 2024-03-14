@@ -1,8 +1,5 @@
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <unordered_map>
-#include <vector>
+#include <bits/stdc++.h>
+
 using namespace std;
 
 using LogicFunction = function<bool(const vector<bool>&, int)>;
@@ -59,36 +56,35 @@ unordered_map<string, LogicFunction> logic_functions = {
         {"NOT", logic_NOT}
 };
 
-vector<vector<string>> getting_data(const string& filename)
-{
+vector<tuple<int, char, int>> readFromFile(const string& filename) {
+    vector<tuple<int, char, int>> readings;
     ifstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Failed to open stimuli file: " << filename << endl;
-        exit(1);
-    }
     string line;
-    vector<string> Conc;
-    vector<vector<string>> all;
-    string zx;
-    while(getline(file,line))
-    {
-        for(int i=0; i<line.length()-1;i++)
-        {
-            if(!(line[i]==','))
-            {
-                zx=zx+line[i];
-            }
-            else
-            {
-                Conc.push_back(zx);
-            }
-        }
-        all.push_back(Conc);
 
+    while (getline(file, line)) {
+        stringstream ss(line);
+        string token;
+
+        int value1;
+        char value2;
+        int value3;
+
+        // Read comma-separated values from the line
+        if (getline(ss, token, ','))
+            value1 = stoi(token);
+        if (getline(ss, token, ','))
+            value2 = token[1]; // Extracting the first character of the string
+        if (getline(ss, token, ','))
+            value3 = stoi(token);
+
+        // Store the values in a tuple and push it into the vector
+        readings.push_back(make_tuple(value1, value2, value3));
     }
-    return all;
 
+    return readings;
 }
+
+
 struct Component {
     int num_inputs;
     int delay_ps;
@@ -139,10 +135,10 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
     string line;
     bool reading_inputs = false;
     bool reading_components = false;
-    line.pop_back();
+    // line.pop_back();
     while (getline(file, line))
     {
-        line.pop_back();
+        // line.pop_back();
         if (line == "INPUTS:") {
             reading_inputs = true;
             continue;
@@ -168,8 +164,41 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
     file.close();
 }
 
+void funccall(vector<tuple<string,string,vector<bool>>>vec, unordered_map<string, int>input_map){
+    
+    for (int i = 0; i < vec.size(); i++)
+    {
+vector<bool> inp = std::get<2>(vec[i]);
+string gatename = std::get<0>(vec[i]);
+string output=std::get<1>(vec[i]);
+
+
+        string z=gatename+',';
+             if(gatename=="NOT"){
+            input_map[output]=logic_NOT(inp,component_library[z].delay_ps);
+        }
+        gatename.pop_back();
+        if(gatename=="AND"){
+            input_map[output]=logic_AND(inp,component_library[z].delay_ps);
+        }
+        if(gatename=="OR"){
+            input_map[output]=logic_OR(inp,component_library[z].delay_ps);
+        }
+        if(gatename=="XOR"){
+            cout<<"out   " <<component_library[z].delay_ps<<"\n";
+            input_map[output]=logic_XOR(inp,component_library[z].delay_ps);
+        }
+
+         if(gatename=="NAND"){
+            cout<<"out   " <<component_library[z].delay_ps<<"\n";
+            input_map[output]=logic_XOR(inp,component_library[z].delay_ps);
+        }
+
+    }
+}
 int main() {
-    loadLibrary("lib.txt");
+    loadLibrary("Circuit 3/Circuit 3.lib.txt");
+vector<tuple<string,string,vector<bool>>>vec;
 
     // Example usage
     for (const auto& x : component_library) {
@@ -177,7 +206,7 @@ int main() {
     }
     vector<string> inputs;
     vector<vector<string>> components;
-    parse_cir_file("cir.txt", inputs, components);
+    parse_cir_file("Circuit 3/Circuit 3.cir.txt", inputs, components);
 
 
     // Store inputs in a map and initialize to zero
@@ -233,7 +262,7 @@ int main() {
         string z=gatename+',';
         output.pop_back();
         cout<<"out "<<output<<"\n";
-
+        vec.push_back({gatename,output,inp});
         if(gatename=="NOT"){
             input_map[output]=logic_NOT(inp,component_library[z].delay_ps);
             delay_map[output] = max_delay + component_library[z].delay_ps;
@@ -277,14 +306,11 @@ int main() {
         cout << x.first << ": " << x.second << " ps" << endl;
     }
 
-    vector<vector<string>> bex= getting_data("Circuit 3.stim");
+    vector<tuple<int, char, int>> readings = readFromFile("Circuit 3/Circuit 3.stim");
 
-      for (int i = 0; i < bex.size(); i++)
-    {
-        for (int j = 0; j < bex.size(); j++)
-        {
-           cout<<bex[i][j]<<endl;
-        }
+    // Printing out the vector to verify the results
+    for (const auto& reading : readings) {
+        cout << get<0>(reading) << ", " << get<1>(reading) << ", " << get<2>(reading) << endl;
     }
 
 
