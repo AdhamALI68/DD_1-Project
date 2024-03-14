@@ -59,7 +59,36 @@ unordered_map<string, LogicFunction> logic_functions = {
         {"NOT", logic_NOT}
 };
 
+vector<vector<string>> getting_data(const string& filename)
+{
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Failed to open stimuli file: " << filename << endl;
+        exit(1);
+    }
+    string line;
+    vector<string> Conc;
+    vector<vector<string>> all;
+    string zx;
+    while(getline(file,line))
+    {
+        for(int i=0; i<line.length()-1;i++)
+        {
+            if(!(line[i]==','))
+            {
+                zx=zx+line[i];
+            }
+            else
+            {
+                Conc.push_back(zx);
+            }
+        }
+        all.push_back(Conc);
 
+    }
+    return all;
+
+}
 struct Component {
     int num_inputs;
     int delay_ps;
@@ -247,6 +276,18 @@ int main() {
     for (const auto& x: delay_map) {
         cout << x.first << ": " << x.second << " ps" << endl;
     }
+
+    vector<vector<string>> bex= getting_data("Circuit 3.stim");
+
+      for (int i = 0; i < bex.size(); i++)
+    {
+        for (int j = 0; j < bex.size(); j++)
+        {
+           cout<<bex[i][j]<<endl;
+        }
+    }
+
+
 
     return 0;
 }
