@@ -8,15 +8,13 @@ using namespace std;
 class LogicalExpressionEvaluator {
 private:
     bool isOperator(char c) {
-        return (c == '&' || c == '|' || c == '~' || c == '^');
+        return (c == '&' || c == '|' || c == '~' );
     }
 
     int precedence(char c) {
         switch (c) {
             case '|':
                 return 1;
-            case '^':
-                return 2;
             case '&':
                 return 3;
             case '~':
@@ -33,8 +31,6 @@ private:
                 return a || b;
             case '~':
                 return !a;
-            case '^':
-                return a != b;
         }
         return false;
     }
@@ -97,7 +93,7 @@ int main() {
         {'a', true},
         {'b', false},
         {'c', true},
-        {'d',false}
+        {'d',true}
     };
     string expression = "(d|(a&b))&(a&c)";
 
