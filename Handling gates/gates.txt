@@ -1,0 +1,1 @@
+ELRGALA_W_ADHAM (in0 | ~in0) & (~in1 | in0)
