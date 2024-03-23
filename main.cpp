@@ -334,6 +334,14 @@ int main() {
         for (const auto& gate : vec) {
             cout << get<1>(gate) << " = " << input_map[get<1>(gate)] << endl;
         }
+        // Calculate and output the maximum propagation delay
+        int max_delay = 0;
+        for (const auto& delay : delay_map) {
+        max_delay = max(max_delay, delay.second);
+        }
+        cout << "Maximum Propagation Delay: " << max_delay << " ps" << endl;
+
+        
 
         // Output a blank line for better readability
         cout << endl;
