@@ -16,23 +16,31 @@ private:
             case '|':
                 return 1;
             case '&':
-                return 3;
+                return 2; // Adjusted for clarity, though not necessary
             case '~':
-                return 4;
+                return 3; // Highest precedence for unary operator
         }
         return -1;
     }
 
+    // Overloaded evaluate function for unary operators
+    bool evaluate(bool a, char op) {
+        switch (op) {
+            case '~':
+                return !a;
+        }
+        return false; // Should never reach here
+    }
+
+    // Existing evaluate function for binary operators
     bool evaluate(bool a, bool b, char op) {
         switch (op) {
             case '&':
                 return a && b;
             case '|':
                 return a || b;
-            case '~':
-                return !a;
         }
-        return false;
+        return false; // Should never reach here
     }
 
 public:
@@ -49,24 +57,40 @@ public:
                 operators.push(c);
             } else if (c == ')') {
                 while (operators.top() != '(') {
-                    bool b = operands.top();
-                    operands.pop();
-                    bool a = operands.top();
-                    operands.pop();
-                    char op = operators.top();
-                    operators.pop();
-                    operands.push(evaluate(a, b, op));
+                    if (operators.top() == '~') {
+                        bool a = operands.top();
+                        operands.pop();
+                        char op = operators.top();
+                        operators.pop();
+                        operands.push(evaluate(a, op));
+                    } else {
+                        bool b = operands.top();
+                        operands.pop();
+                        bool a = operands.top();
+                        operands.pop();
+                        char op = operators.top();
+                        operators.pop();
+                        operands.push(evaluate(a, b, op));
+                    }
                 }
                 operators.pop();
             } else if (isOperator(c)) {
                 while (!operators.empty() && precedence(c) <= precedence(operators.top())) {
-                    bool b = operands.top();
-                    operands.pop();
-                    bool a = operands.top();
-                    operands.pop();
-                    char op = operators.top();
-                    operators.pop();
-                    operands.push(evaluate(a, b, op));
+                    if (operators.top() == '~') {
+                        bool a = operands.top();
+                        operands.pop();
+                        char op = operators.top();
+                        operators.pop();
+                        operands.push(evaluate(a, op));
+                    } else {
+                        bool b = operands.top();
+                        operands.pop();
+                        bool a = operands.top();
+                        operands.pop();
+                        char op = operators.top();
+                        operators.pop();
+                        operands.push(evaluate(a, b, op));
+                    }
                 }
                 operators.push(c);
             }
@@ -74,13 +98,21 @@ public:
         }
 
         while (!operators.empty()) {
-            bool b = operands.top();
-            operands.pop();
-            bool a = operands.top();
-            operands.pop();
-            char op = operators.top();
-            operators.pop();
-            operands.push(evaluate(a, b, op));
+            if (operators.top() == '~') {
+                bool a = operands.top();
+                operands.pop();
+                char op = operators.top();
+                operators.pop();
+                operands.push(evaluate(a, op));
+            } else {
+                bool b = operands.top();
+                operands.pop();
+                bool a = operands.top();
+                operands.pop();
+                char op = operators.top();
+                operators.pop();
+                operands.push(evaluate(a, b, op));
+            }
         }
 
         return operands.top();
@@ -95,8 +127,7 @@ int main() {
         {'c', true},
         {'d',true}
     };
-    string expression = "(d|(a&b))&(a&c)";
-
+    string expression = "(~d|(a&b))&(a&c)";
     try {
         bool result = evaluator.evaluateInfixExpression(expression, variables);
         cout << "Result: " << (result ? "true" : "false") << endl;

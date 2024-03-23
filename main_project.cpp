@@ -1,3 +1,4 @@
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -36,7 +37,8 @@ bool logic_NAND(const vector<bool>& inputs, int delay) {
         //cout<<"ber"<<inputs[i]<<"bet§"<<"\n";
     }
     //cout<<" nsnd size "<<inputs.size();
-    //cout<<inputs[1];    return result;
+    //cout<<inputs[1];    
+    return result;
 }
 
 bool logic_XOR(const vector<bool>& inputs, int delay) {
