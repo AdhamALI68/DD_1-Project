@@ -6,8 +6,15 @@
 #include <unordered_map>
 #include <tuple>
 #include <stack>
+#include <string>
+
 
 using namespace std;
+bool compareTuples(tuple<int, string, int> &a, tuple<int, string, int> &b) {
+    return get<0>(a) < get<0>(b);
+}
+
+
 class LogicalExpressionEvaluator {
 private:
     bool isOperator(char c) {
@@ -60,16 +67,14 @@ private:
     }
 
 public:
-    bool evaluateInfixExpression(string expression, unordered_map<string, bool>& variables) {
+    bool evaluateInfixExpression(string expression, unordered_map<string, bool>& variables , unordered_map<string, int>& input_map) {
         stack<bool> operands;
         stack<char> operators;
         int i = 0;
-
         while (i < expression.length()) {
             char c = expression[i];
             if (!isOperator(c)) {
                 string operand = extractOperand(expression, i);
-                cout<<"operand "<<operand<<"\n";
                 if (variables.find(operand) != variables.end()) {
                     operands.push(variables[operand]);
                 } else {
@@ -94,7 +99,7 @@ public:
                     }
                     operators.pop();
                 }
-                operators.pop(); // Pop '('
+                operators.pop();
             } else if (isOperator(c)) {
                 while (!operators.empty() && precedence(c) <= precedence(operators.top())) {
                     if (operators.top() == '~') {
@@ -129,69 +134,12 @@ public:
             }
             operators.pop();
         }
-
         return operands.top();
     }
 };
 
 using LogicFunction = function<bool(const vector<bool>&, int)>;
 
-// Define basic logic functions with delay parameter
-bool logic_AND(const vector<bool>& inputs, int delay) {
-    bool result = true;
-    for (bool input : inputs) {
-        result = result && input;
-    }
-    // Modify delay if needed
-    return result;
-}
-
-bool logic_OR(const vector<bool>& inputs, int delay) {
-    bool result = false;
-    for (bool input : inputs) {
-        result = result || input;
-    }
-    // Modify delay if needed
-    return result;
-}
-
-bool logic_NAND(const vector<bool>& inputs, int delay) {
-    bool result = !(logic_AND(inputs, delay));
-    // Modify delay if needed
-    for (int i=0; i<inputs.size();i++) {
-        
-    }
-    return result;
-}
-
-bool logic_XOR(const vector<bool>& inputs, int delay) {
-
-    bool result = false;
-    for (bool input : inputs) {
-        result = result ^ input;
-    }
-    
-    // Modify delay if needed
-    return result;
-}
-
-bool logic_NOT(const vector<bool>& inputs, int delay) {
-    vector<bool> inverted_inputs = inputs; // Copy inputs to avoid modifying original vector
-    for (int i = 0; i < inputs.size(); ++i) {
-        inverted_inputs[i] = !inverted_inputs[i]; // Invert each input
-    }
-    // Modify delay if needed
-    return inverted_inputs[0]; // NOT gate returns inversion of the input
-}
-
-// Create a map to store logic functions
-unordered_map<string, LogicFunction> logic_functions = {
-        {"AND", logic_AND},
-        {"OR", logic_OR},
-        {"NAND", logic_NAND},
-        {"XOR", logic_XOR},
-        {"NOT", logic_NOT}
-};
 
 vector<tuple<int, char, int>> readFromFile(const string& filename) {
     vector<tuple<int, char, int>> readings;
@@ -225,6 +173,7 @@ vector<tuple<int, char, int>> readFromFile(const string& filename) {
 struct Component {
     int num_inputs;
     int delay_ps;
+    string logic;
 };
 
 // Define a map to store components
@@ -240,19 +189,23 @@ void loadLibrary(const string& filename) {
     string line;
     while (getline(file, line)) {
     std::stringstream ss(line);
-    std::string firstWord, lastWord, word;
+    std::string firstWord, expression,lastWord, word;
+    vector <string> words;
 
     // Extract the first word
-    ss >> firstWord;
-
     // Extract the last word
     while (ss >> word) {
-        lastWord = word; // Overwrite lastWord until the last word is reached
+        words.push_back(word); // Overwrite lastWord until the last word is reached
     }
-    int lastInteger = std::stoi(lastWord);
-    component_library[firstWord] = {firstWord[0], lastInteger};
-    }
+    firstWord = words[0];
+    expression = words[2];
+    lastWord = words[words.size()-1];
+    expression.pop_back();
+    //cout << "first " << firstWord << " expression " << expression <<"last word " <<lastWord << endl;
 
+    int lastInteger = std::stoi(lastWord);
+    component_library[firstWord] = {firstWord[0], lastInteger,expression};
+    }
     file.close();
 }
 
@@ -314,41 +267,80 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
     file.close();
 }
 
-void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<string, int> input_map, vector<vector<string>> ins) {
+
+void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<string, int> input_map, vector<vector<string>> ins, int sd,unordered_map<string, int> delay_map,int delay, std::ofstream& outputFile,    vector <tuple <int ,string, int>> &outs) {
+
     for (int i = 0; i < vec.size(); i++) {
         string gatename = std::get<0>(vec[i]);
         string output = std::get<1>(vec[i]);
         vector<bool> inp;
-        // Prepare inputs for the current component
         for (int j = 0;  j < ins[i].size(); j++) {
             inp.push_back(input_map[ins[i][j]]);
         }
         string z = gatename + ',';
-        // Execute the appropriate logic function based on the gate name
-        if (gatename == "NOT") {
-            input_map[output] = logic_NOT(inp, component_library[z].delay_ps);
-        } else if (gatename == "AND") {
-            input_map[output] = logic_AND(inp, component_library[z].delay_ps);
-        } else if (gatename == "OR") {
-            input_map[output] = logic_OR(inp, component_library[z].delay_ps);
-        } else if (gatename == "XOR") {
-            input_map[output] = logic_XOR(inp, component_library[z].delay_ps);
-        } else if (gatename == "NAND") {
-            input_map[output] = logic_NAND(inp, component_library[z].delay_ps);
+        LogicalExpressionEvaluator evaluator;
+        unordered_map<string, bool> variables;
+        string to_insert = component_library[z].logic;
+        string temp = "";
+        int x = 0;
+        bool flag = false;
+        vector <int> nums;
+        for (int k =0 ; k < to_insert.length(); k++){
+            if ((to_insert[k] >= 48 && to_insert[k] <= 57)){
+                temp += to_insert[k];
+                flag = true;
+            }
+            if (flag == true && (to_insert[k] >57 || to_insert[k] < 48)){
+                nums.push_back(atoi(temp.c_str()));
+                temp = "";
+                flag = false;
+            }
         }
-        
+        for (int h : nums){
+            x=max(x,h);
+        }
+
+        for (int k = 0; k< ins[i].size(); k++)
+        {
+            string z="i";
+            z+=to_string(k+1);
+            variables[z]=input_map[ins[i][k]];
+        }
+        if(sd==0){
+            input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
+            //outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
+            outs.push_back({delay_map[output]+delay , output , input_map[output]});
+        } else {
+            int zin=input_map[output];
+            input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
+
+            if(zin!=input_map[output]){
+                //outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
+               outs.push_back(make_tuple(delay_map[output]+delay , output , input_map[output]));
+
+            }
+        }
     }
 }
 
+
 int main() {
-    loadLibrary("For_Gates_circuit/circuit6.lib.txt");
+    
+    unordered_map<string, bool> variables = {
+        {"in0", true},
+        {"in1", false},
+        {"in2", true},
+        {"in3", true}
+    };
+
+    loadLibrary("Circuit 4/Circuit 4.lib.txt");
     vector<tuple<string,string,vector<bool>>>vec;
 
     vector<string> inputs;
     vector<vector<string>> components;
     vector<vector<string>> ins;
 
-    parse_cir_file("Circuit 3/Circuit 3.cir.txt", inputs, components,ins);
+    parse_cir_file("Circuit 4/Circuit 4.cir.txt", inputs, components,ins);
 
 
     // Store inputs in a map and initialize to zero
@@ -365,8 +357,8 @@ int main() {
         component_functions[function_name] = num_parameters;
     }
 
-    // Example usage:
-    // Printing the input map
+    //Example usage:
+    //Printing the input map
     unordered_map<string, int> operation;
     operation=component_functions;
 
@@ -389,14 +381,12 @@ int main() {
             if(output!=""){
                 if(components[i][j][components[i][j].length()-1]==','){components[i][j].erase(components[i][j].length()-1);}
                 in.push_back(components[i][j]);
-                if(input_map.find(components[i][j])==input_map.end()){
-                    input_map[components[i][j]]=0;}
 
             }
         }
         for (int k = 0; k < in.size(); k++)
         {
-            inp.push_back(input_map[in[k]]);
+            // inp.push_back(input_map[in[k]]);
             // Update the maximum delay for this component based on the input wire delays
             if (delay_map.find(in[k]) != delay_map.end()) {
                 max_delay = max(max_delay, delay_map[in[k]]);
@@ -405,51 +395,33 @@ int main() {
         string z=gatename+',';
         output.pop_back();
         vec.push_back({gatename,output,inp});
-        if(gatename=="NOT"){
-            input_map[output]=logic_NOT(inp,component_library[z].delay_ps);
-            delay_map[output] = max_delay + component_library[z].delay_ps;
-        }
-        gatename.pop_back();
-        if(gatename=="AND"){
-            input_map[output]=logic_AND(inp,component_library[z].delay_ps);
-            delay_map[output] = max_delay + component_library[z].delay_ps;
-        }
-        if(gatename=="OR"){
-            input_map[output]=logic_OR(inp,component_library[z].delay_ps);
-            delay_map[output] = max_delay + component_library[z].delay_ps;
-        }
-        if(gatename=="XOR"){
-            input_map[output]=logic_XOR(inp,component_library[z].delay_ps);
-            delay_map[output] = max_delay + component_library[z].delay_ps;
-        }
-
-         if(gatename=="NAND"){
-            input_map[output]=logic_NAND(inp,component_library[z].delay_ps);
-            delay_map[output] = max_delay + component_library[z].delay_ps;
-        }
-
+        delay_map[output] = max_delay+ component_library[z].delay_ps;
         in.clear();
     }
+    vector <tuple <int ,string, int>> outs; 
 
     cout << "Propagation Delays:" << endl;
 
-    // Printing the propagation delays for each wire
-    for (const auto& x: delay_map) 
-    {
-        cout << x.first << ": " << x.second << " ps" << endl;
+    vector<tuple<int, char, int>> readings = readFromFile("Circuit 4/Circuit 4.stim");
+    tuple<int, char, int>v{0,'A',0};
+    readings.insert(readings.begin(),v);
+    // Printing out the vector to verify the results
+    int sd=0;
+        std::ofstream outputFile("output.txt");
+    if (!outputFile.is_open()) {
+        std::cerr << "Failed to open output file." << std::endl;
+        return 1;
     }
 
-    vector<tuple<int, char, int>> readings = readFromFile("Circuit 3/Circuit 3.stim");
-
-    // Printing out the vector to verify the results
-    
     for (const auto& reading : readings) 
     {
-        
         string c="";
+        int delay=get<0>(reading);
         c+=get<1>(reading);
         input_map[c]=get<2>(reading);
         vector<bool>vi;
+            outputFile << delay_map[c]+delay << ", " << c << ", " << input_map[c] << "\n";
+            outs.push_back({delay_map[c]+delay,c,input_map[c]});
 
         for (const auto& x: input_map) 
         {
@@ -458,23 +430,18 @@ int main() {
                 vi.push_back(x.second);}
 
         }
-        funccall(vec, input_map, ins);
+        funccall(vec, input_map, ins,sd++,delay_map,delay,outputFile,outs);
 
-        // Output the results
-        cout << "Time: " << get<0>(reading) << " " << get<1>(reading) << " = " << get<2>(reading) << endl;
-
-        // Display the updated state of each wire
-        for (const auto& input : inputs) {
-            cout << input << " = " << input_map[input] << endl;
-        }
-        // Output the final state of the gates
-        for (const auto& gate : vec) {
-            cout << get<1>(gate) << " = " << input_map[get<1>(gate)] << endl;
-        }
-      
-        // Output a blank line for better readability
-        cout << endl;
     }
+    sort(outs.begin(), outs.end(), compareTuples);
+    cout << get<0>(outs[0]) << endl;
+    ofstream o;
+    o.open("output_final.txt");
+    outs.erase(outs.begin(),outs.begin()+1);
+    for (int i = 0; i < outs.size();i++){
+        o << get<0>(outs[i])<<", " <<get<1>(outs[i]) << ", " << get<2>(outs[i]) << endl; 
+    }
+    o.close();
 
     return 0;
 }
