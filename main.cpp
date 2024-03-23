@@ -49,13 +49,19 @@ bool logic_NOT(const vector<bool>& inputs, int delay) {
     return inverted_inputs[0];
 }
 
+bool logic_NOR(const vector<bool>& inputs, int delay) {
+    bool result = !(logic_OR(inputs, delay));
+    return result;
+}
+
 // Map to store logic functions
 unordered_map<string, LogicFunction> logic_functions = {
     {"AND", logic_AND},
     {"OR", logic_OR},
     {"NAND", logic_NAND},
     {"XOR", logic_XOR},
-    {"NOT", logic_NOT}
+    {"NOT", logic_NOT},
+    {"NOR", logic_NOR}
 };
 
 // Structure to hold component information
@@ -204,6 +210,8 @@ void execute_circuit(vector<tuple<string,string,vector<bool>>> vec, unordered_ma
             input_map[output] = logic_XOR(inp, component_library[z].delay_ps);
         } else if (gatename == "NAND") {
             input_map[output] = logic_NAND(inp, component_library[z].delay_ps);
+        }else if (gatename == "NOR") {
+            input_map[output] = logic_NOR(inp, component_library[z].delay_ps);
         }
     }
 }
@@ -296,7 +304,9 @@ int main() {
         } else if (gatename == "NAND") {
             input_map[output] = logic_NAND(inp, component_library[z].delay_ps);
             delay_map[output] = max_delay + component_library[z].delay_ps;
-        }
+        }else if (gatename == "N0R") {
+            input_map[output] = logic_NOR(inp, component_library[z].delay_ps);
+            delay_map[output] = max_delay + component_library[z].delay_ps;
         // Clear the input wires for the next component
         in.clear();
     }
@@ -319,6 +329,10 @@ int main() {
         // Display the updated state of each wire
         for (const auto& input : inputs) {
             cout << input << " = " << input_map[input] << endl;
+        }
+        // Output the final state of the gates
+        for (const auto& gate : vec) {
+            cout << get<1>(gate) << " = " << input_map[get<1>(gate)] << endl;
         }
 
         // Output a blank line for better readability
