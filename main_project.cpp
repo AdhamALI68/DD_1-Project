@@ -341,7 +341,7 @@ void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<strin
 }
 
 int main() {
-    loadLibrary("Circuit 3/Circuit 3.lib.txt");
+    loadLibrary("For_Gates_circuit/circuit6.lib.txt");
     vector<tuple<string,string,vector<bool>>>vec;
 
     vector<string> inputs;
