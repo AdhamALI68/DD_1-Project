@@ -5,6 +5,7 @@
 #include <functional>
 #include <unordered_map>
 #include <tuple>
+#include<algorithm>
 #include <stack>
 #include <string>
 
@@ -268,7 +269,7 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
 }
 
 
-void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<string, int> input_map, vector<vector<string>> ins, int sd,unordered_map<string, int> delay_map,int delay, std::ofstream& outputFile,    vector <tuple <int ,string, int>> &outs) {
+void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<string, int> &input_map, vector<vector<string>> ins, int sd,unordered_map<string, int> delay_map,int delay, std::ofstream& outputFile,    vector <tuple <int ,string, int>> &outs) {
 
     for (int i = 0; i < vec.size(); i++) {
         string gatename = std::get<0>(vec[i]);
@@ -308,14 +309,15 @@ void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<strin
         }
         if(sd==0){
             input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
-            //outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
-            outs.push_back({delay_map[output]+delay , output , input_map[output]});
+                            outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
+
+             outs.push_back({delay_map[output]+delay , output , input_map[output]});
         } else {
             int zin=input_map[output];
             input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
-
+cout<<"zin "<<zin<<" outputs evaluated "<<input_map[output]<<"  "<<output<<"\n";
             if(zin!=input_map[output]){
-                //outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
+                outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
                outs.push_back(make_tuple(delay_map[output]+delay , output , input_map[output]));
 
             }
@@ -333,14 +335,14 @@ int main() {
         {"in3", true}
     };
 
-    loadLibrary("Circuit 4/Circuit 4.lib.txt");
+    loadLibrary("Circuit 3/Circuit 3.lib");
     vector<tuple<string,string,vector<bool>>>vec;
 
     vector<string> inputs;
     vector<vector<string>> components;
     vector<vector<string>> ins;
 
-    parse_cir_file("Circuit 4/Circuit 4.cir.txt", inputs, components,ins);
+    parse_cir_file("Circuit 3/Circuit 3.cir", inputs, components,ins);
 
 
     // Store inputs in a map and initialize to zero
