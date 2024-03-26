@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <stack>
 #include <string>
+#include <exception>
 
 
 using namespace std;
@@ -341,9 +342,14 @@ void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<strin
     }
 }
 
-string violation_check(unordered_map<string, Component> component_library , unordered_map<string, int> component_circuit){
+vector<vector<tuple<bool,string>>> violation_check(unordered_map<string, Component> component_library , unordered_map<string, int> component_circuit , vector<vector<string>> components, vector<string> inputs){
 vector <string> gates_lib;
-bool flag = 0;
+vector <string> output_gates;
+vector <vector<tuple<bool,string>>> res;
+vector<tuple<bool, string>> t;
+bool flag,bool2,pushed = 0;
+string invalid_in_out = "\0";
+
 for (auto &x: component_library){
     gates_lib.push_back(x.first);
 }
@@ -355,10 +361,42 @@ for (auto &y: component_circuit){
             break;
         }
     }
-    if (flag == 0){return y.first;}
+    if (flag == 0){t.push_back({1,y.first}); res.push_back(t); t.clear(); pushed = true;}
 }
-return "\0";
+if (pushed == false){t.clear(); t.push_back({0,"\0"}); res.push_back(t);}
+for (auto&a : components){
+    for (int i = 0; i < a.size(); i++){
+        if((i+1)%3 == 0){output_gates.push_back(a[i]);}
+    }
 }
+for (auto &in: inputs){
+    if (bool2 == true){break;}
+    for (auto &z: output_gates){
+        if (in == z.substr(0,z.length()-1)){
+            // cout << "in   " << in << "      z" << z <<" value:" << (in == z.substr(0,z.length()-1)); 
+            bool2 = true;
+            invalid_in_out = in;
+            break;
+        }
+    }
+}
+t.clear();
+t.push_back({bool2, invalid_in_out});
+res.push_back(t);
+return res;
+}
+
+class ERROR_IN_OUT: public logic_error{
+    public:
+    ERROR_IN_OUT(string x): logic_error(x){}
+};
+
+class ERROR_IN_GATE_NAME : public logic_error{
+    public:
+    ERROR_IN_GATE_NAME(string x): logic_error(x){}
+};
+
+
 int main() {
     
     unordered_map<string, bool> variables = {
@@ -376,7 +414,6 @@ int main() {
     vector<vector<string>> ins;
 
     parse_cir_file("tests/3.cir", inputs, components,ins);
-
     // Store inputs in a map and initialize to zero
     unordered_map<string, int> input_map;
     for (const string& input : inputs) {
@@ -393,11 +430,13 @@ int main() {
 
     //checking for compatiblities between lib and circ files
     try{
-        string res = violation_check(component_library , component_functions);
-        if (res != "\0"){
-            throw res;
+        vector<vector<tuple<bool,string>>> res = violation_check(component_library , component_functions, components , inputs);
+        if (get<0>(res[0][0]) == 1){
+            throw ERROR_IN_GATE_NAME(get<1>(res[0][0]));
         }
-
+        if (get<0>(res[1][0]) == 1){
+            throw ERROR_IN_OUT(get<1>(res[1][0]));
+        }
     //Example usage:
     //Printing the input map
     unordered_map<string, int> operation;
@@ -438,6 +477,7 @@ int main() {
         vec.push_back({gatename,output,inp});
         delay_map[output] = max_delay+ component_library[z].delay_ps;
         in.clear();
+
     }
     vector <tuple <int ,string, int>> outs; 
 
@@ -487,8 +527,10 @@ int main() {
     //for ()
     o.close();}
 
-    catch(string x){
-        cout << "Incompatiblities between circ file and lib file have been found !!\n\n";
-        cout << "Gate " << x.substr(0,x.length()-1) << " in circ file has not been declared in the lib file\n\n";  
+    catch(const ERROR_IN_GATE_NAME &x){
+        cout <<"Incompatibilites between lib and circ files have been found; " <<x.what() << " is declared in the circ file but not in the lib file.\n";
+    }
+    catch(const ERROR_IN_OUT &y){
+       cout << "Input " << y.what() << " has been found as an output, which is invalid !!";
     }
 }
