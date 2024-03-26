@@ -5,7 +5,7 @@
 #include <functional>
 #include <unordered_map>
 #include <tuple>
-#include<algorithm>
+#include <algorithm>
 #include <stack>
 #include <string>
 
@@ -13,6 +13,20 @@
 using namespace std;
 bool compareTuples(tuple<int, string, int> &a, tuple<int, string, int> &b) {
     return get<0>(a) < get<0>(b);
+}
+
+template <typename T>
+void printer(vector<T> &f){
+for (T i: f){
+cout << i << endl;
+}
+}
+
+template <typename Z>
+void map_printer(unordered_map<string, Z> m){
+for (auto& it: m) {
+    cout << it.first << "   " <<endl;
+}
 }
 
 
@@ -72,10 +86,12 @@ public:
         stack<bool> operands;
         stack<char> operators;
         int i = 0;
+        
         while (i < expression.length()) {
             char c = expression[i];
             if (!isOperator(c)) {
                 string operand = extractOperand(expression, i);
+                        cout<<operand;
                 if (variables.find(operand) != variables.end()) {
                     operands.push(variables[operand]);
                 } else {
@@ -245,6 +261,7 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
             {
                 i++;
                 component.push_back(token);
+
                 if(i>=4){vv.push_back(token);
 
             }
@@ -308,6 +325,7 @@ void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<strin
             variables[z]=input_map[ins[i][k]];
         }
         if(sd==0){
+            cout<<output<<"   "<<component_library[z].logic<<"\n";
             input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
                             outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
 
@@ -315,17 +333,32 @@ void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<strin
         } else {
             int zin=input_map[output];
             input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
-cout<<"zin "<<zin<<" outputs evaluated "<<input_map[output]<<"  "<<output<<"\n";
             if(zin!=input_map[output]){
                 outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
                outs.push_back(make_tuple(delay_map[output]+delay , output , input_map[output]));
-
             }
         }
     }
 }
 
-
+string violation_check(unordered_map<string, Component> component_library , unordered_map<string, int> component_circuit){
+vector <string> gates_lib;
+bool flag = 0;
+for (auto &x: component_library){
+    gates_lib.push_back(x.first);
+}
+for (auto &y: component_circuit){
+    flag = 0;
+    for (auto &z: gates_lib){
+        if (y.first == z){
+            flag = 1;
+            break;
+        }
+    }
+    if (flag == 0){return y.first;}
+}
+return "\0";
+}
 int main() {
     
     unordered_map<string, bool> variables = {
@@ -335,15 +368,14 @@ int main() {
         {"in3", true}
     };
 
-    loadLibrary("Circuit 3/Circuit 3.lib");
+    loadLibrary("tests/3.lib");
     vector<tuple<string,string,vector<bool>>>vec;
 
     vector<string> inputs;
     vector<vector<string>> components;
     vector<vector<string>> ins;
 
-    parse_cir_file("Circuit 3/Circuit 3.cir", inputs, components,ins);
-
+    parse_cir_file("tests/3.cir", inputs, components,ins);
 
     // Store inputs in a map and initialize to zero
     unordered_map<string, int> input_map;
@@ -358,6 +390,13 @@ int main() {
         int num_parameters = component.size() - 3; // Number of parameters (excluding name, output, and comma)
         component_functions[function_name] = num_parameters;
     }
+
+    //checking for compatiblities between lib and circ files
+    try{
+        string res = violation_check(component_library , component_functions);
+        if (res != "\0"){
+            throw res;
+        }
 
     //Example usage:
     //Printing the input map
@@ -404,7 +443,7 @@ int main() {
 
     cout << "Propagation Delays:" << endl;
 
-    vector<tuple<int, char, int>> readings = readFromFile("Circuit 4/Circuit 4.stim");
+    vector<tuple<int, char, int>> readings = readFromFile("tests/3.stim");
     tuple<int, char, int>v{0,'A',0};
     readings.insert(readings.begin(),v);
     // Printing out the vector to verify the results
@@ -440,10 +479,16 @@ int main() {
     ofstream o;
     o.open("output_final.txt");
     outs.erase(outs.begin(),outs.begin()+1);
+    //vector <>
     for (int i = 0; i < outs.size();i++){
-        o << get<0>(outs[i])<<", " <<get<1>(outs[i]) << ", " << get<2>(outs[i]) << endl; 
+        o << get<0>(outs[i])<<", " <<get<1>(outs[i]) << ", " << get<2>(outs[i]) << endl;
     }
-    o.close();
 
-    return 0;
+    //for ()
+    o.close();}
+
+    catch(string x){
+        cout << "Incompatiblities between circ file and lib file have been found !!\n\n";
+        cout << "Gate " << x.substr(0,x.length()-1) << " in circ file has not been declared in the lib file\n\n";  
+    }
 }

@@ -2,7 +2,7 @@ import nltk as nl
 import graphing_functions
 import numpy as np
 
-file = open("D:\Spring 2024\Digital Design\Project\project-1\output.sim" , "r")
+file = open("D:\Spring 2024\Digital Design\Project\Final project\Graphing\output.sim" , "r")
 files_tokens = file.readlines()
 files_tokens_of_tokens = []
 
