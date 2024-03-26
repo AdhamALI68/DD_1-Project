@@ -134,12 +134,10 @@ public:
 int main() {
     LogicalExpressionEvaluator evaluator;
     unordered_map<string, bool> variables = {
-        {"in0", true},
-        {"in1", false},
-        {"in2", true},
-        {"in3", true}
+        {"A", false},
+        {"B", false}
     };
-    string expression = "(in3|(in0&in1))&(in0&in2)";
+    string expression = "(A&~B)|(B&~A)";
     try {
         bool result = evaluator.evaluateInfixExpression(expression, variables);
         cout << "Result: " << (result ? "true" : "false") << endl;
