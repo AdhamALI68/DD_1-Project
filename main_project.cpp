@@ -206,27 +206,44 @@ void loadLibrary(const string& filename) {
     }
     string line;
     while (getline(file, line)) {
-    std::stringstream ss(line);
-    std::string firstWord, expression,lastWord, word;
-    vector <string> words;
+        // Remove spaces that are not after a comma
+        bool afterComma = false;
+        line.erase(remove_if(line.begin(), line.end(), [&afterComma](char c) {
+            if (c == ',') {
+                afterComma = true;
+                return false;
+            }
+            if (c == ' ' && !afterComma) {
+                return true;
+            }
+            if (c != ' ') {
+                afterComma = false;
+            }
+            return false;
+        }), line.end());
 
-    // Extract the first word
-    // Extract the last word
-    while (ss >> word) {
-        words.push_back(word); // Overwrite lastWord until the last word is reached
-    }
-    firstWord = words[0];
-    expression = words[2];
-    lastWord = words[words.size()-1];
-    expression.pop_back();
-    //cout << "first " << firstWord << " expression " << expression <<"last word " <<lastWord << endl;
+        // Now process the modified line
+        stringstream ss(line);
+        string firstWord, expression, lastWord, word;
+        vector<string> words;
 
-    int lastInteger = std::stoi(lastWord);
-    component_library[firstWord] = {firstWord[0], lastInteger,expression};
+        // Extract the first word
+        // Extract the last word
+        while (ss >> word) {
+            words.push_back(word); // Overwrite lastWord until the last word is reached
+        }
+        firstWord = words[0];
+        expression = words[2];
+        lastWord = words[words.size() - 1];
+        expression.pop_back();
+        // cout << "first " << firstWord << " expression " << expression <<"last word " <<lastWord << endl;
+
+        int lastInteger = std::stoi(lastWord);
+        // Assuming component_library is declared as std::map<std::string, std::tuple<char, int, std::string>> component_library;
+        component_library[firstWord] = {firstWord[0], lastInteger, expression};
     }
     file.close();
-}
-
+    }
 
 void parse_cir_file(const string& filename, vector<string>& inputs, vector<vector<string>>& components, vector<vector<string>>& ins) {
     int i=0;
