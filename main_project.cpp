@@ -414,23 +414,27 @@ class ERROR_IN_GATE_NAME : public logic_error{
 };
 
 
-int main() {
-    
-    unordered_map<string, bool> variables = {
-        {"in0", true},
-        {"in1", false},
-        {"in2", true},
-        {"in3", true}
-    };
+int main(int argc, char* argv[]) {
+    if (argc != 4) {
+        cerr << "Usage: " << argv[0] << " <library_file> <circuit_file> <stimulus_file>" << endl;
+        return 1;
+    }
 
-    loadLibrary("tests/3.lib");
-    vector<tuple<string,string,vector<bool>>>vec;
+    string library_file = argv[1];
+    string circuit_file = argv[2];
+    string stimulus_file = argv[3];
+
+    // Load library file and store propagation delay and number of inputs
+    loadLibrary(library_file);
+
+    vector<tuple<string,string,vector<bool>>> vec;
 
     vector<string> inputs;
     vector<vector<string>> components;
     vector<vector<string>> ins;
 
-    parse_cir_file("tests/3.cir", inputs, components,ins);
+    parse_cir_file(circuit_file, inputs, components,ins);
+
     // Store inputs in a map and initialize to zero
     unordered_map<string, int> input_map;
     for (const string& input : inputs) {
@@ -446,108 +450,103 @@ int main() {
     }
 
     //checking for compatiblities between lib and circ files
-    try{
+    try {
         vector<vector<tuple<bool,string>>> res = violation_check(component_library , component_functions, components , inputs);
-        if (get<0>(res[0][0]) == 1){
+        if (get<0>(res[0][0]) == 1) {
             throw ERROR_IN_GATE_NAME(get<1>(res[0][0]));
         }
-        if (get<0>(res[1][0]) == 1){
+        if (get<0>(res[1][0]) == 1) {
             throw ERROR_IN_OUT(get<1>(res[1][0]));
         }
-    //Example usage:
-    //Printing the input map
-    unordered_map<string, int> operation;
-    operation=component_functions;
 
-    unordered_map<string, int> delay_map; // Map to store propagation delay for each wire
+        //Example usage:
+        //Printing the input map
+        unordered_map<string, int> operation;
+        operation=component_functions;
 
-    for (int i = 0; i < components.size(); i++)
-    {
-        string output="";
-        string gatename="";
-        vector<string>in;
-        vector<bool>inp;
-        int max_delay = 0; // Initialize the maximum delay for this component
-        for (int j = 0; j <components[i].size(); j++)
-        {
-            if(operation[components[i][j]]!=0){
-                if(gatename==""){gatename=components[i][j]; gatename.pop_back(); }
-                output=components[i][j+1];          
-                j++; continue; }
+        unordered_map<string, int> delay_map; // Map to store propagation delay for each wire
 
-            if(output!=""){
-                if(components[i][j][components[i][j].length()-1]==','){components[i][j].erase(components[i][j].length()-1);}
-                in.push_back(components[i][j]);
+        for (int i = 0; i < components.size(); i++) {
+            string output="";
+            string gatename="";
+            vector<string>in;
+            vector<bool>inp;
+            int max_delay = 0; // Initialize the maximum delay for this component
+            for (int j = 0; j <components[i].size(); j++) {
+                if(operation[components[i][j]]!=0) {
+                    if(gatename=="") {
+                        gatename=components[i][j];
+                        gatename.pop_back();
+                    }
+                    output=components[i][j+1];
+                    j++;
+                    continue;
+                }
 
+                if(output!="") {
+                    if(components[i][j][components[i][j].length()-1]==',') {
+                        components[i][j].erase(components[i][j].length()-1);
+                    }
+                    in.push_back(components[i][j]);
+                }
             }
-        }
-        for (int k = 0; k < in.size(); k++)
-        {
-            // inp.push_back(input_map[in[k]]);
-            // Update the maximum delay for this component based on the input wire delays
-            if (delay_map.find(in[k]) != delay_map.end()) {
-                max_delay = max(max_delay, delay_map[in[k]]);
+            for (int k = 0; k < in.size(); k++) {
+                // inp.push_back(input_map[in[k]]);
+                // Update the maximum delay for this component based on the input wire delays
+                if (delay_map.find(in[k]) != delay_map.end()) {
+                    max_delay = max(max_delay, delay_map[in[k]]);
+                }
             }
+            string z=gatename+',';
+            output.pop_back();
+            vec.push_back({gatename,output,inp});
+            delay_map[output] = max_delay+ component_library[z].delay_ps;
+            in.clear();
         }
-        string z=gatename+',';
-        output.pop_back();
-        vec.push_back({gatename,output,inp});
-        delay_map[output] = max_delay+ component_library[z].delay_ps;
-        in.clear();
+        vector <tuple <int ,string, int>> outs;
+        cout << "Propagation Delays:" << endl;
 
-    }
-    vector <tuple <int ,string, int>> outs; 
-
-    cout << "Propagation Delays:" << endl;
-
-    vector<tuple<int, char, int>> readings = readFromFile("tests/3.stim");
-    tuple<int, char, int>v{0,'A',0};
-    readings.insert(readings.begin(),v);
-    // Printing out the vector to verify the results
-    int sd=0;
+        vector<tuple<int, char, int>> readings = readFromFile(stimulus_file);
+        tuple<int, char, int>v{0,'A',0};
+        readings.insert(readings.begin(),v);
+        // Printing out the vector to verify the results
+        int sd=0;
         std::ofstream outputFile("output.txt");
-    if (!outputFile.is_open()) {
-        std::cerr << "Failed to open output file." << std::endl;
-        return 1;
-    }
+        if (!outputFile.is_open()) {
+            std::cerr << "Failed to open output file." << std::endl;
+            return 1;
+        }
 
-    for (const auto& reading : readings) 
-    {
-        string c="";
-        int delay=get<0>(reading);
-        c+=get<1>(reading);
-        input_map[c]=get<2>(reading);
-        vector<bool>vi;
+        for (const auto& reading : readings) {
+            string c="";
+            int delay=get<0>(reading);
+            c+=get<1>(reading);
+            input_map[c]=get<2>(reading);
+            vector<bool>vi;
             outputFile << delay_map[c]+delay << ", " << c << ", " << input_map[c] << "\n";
             outs.push_back({delay_map[c]+delay,c,input_map[c]});
-
-        for (const auto& x: input_map) 
-        {
-
-            if(x.first.length()==1){
-                vi.push_back(x.second);}
-
+            for (const auto& x: input_map) {
+                if(x.first.length()==1) {
+                    vi.push_back(x.second);
+                }
+            }
+            funccall(vec, input_map, ins,sd++,delay_map,delay,outputFile,outs);
         }
-        funccall(vec, input_map, ins,sd++,delay_map,delay,outputFile,outs);
 
-    }
-    sort(outs.begin(), outs.end(), compareTuples);
-    cout << get<0>(outs[0]) << endl;
-    ofstream o;
-    o.open("output_final.txt");
-    outs.erase(outs.begin(),outs.begin()+1);
-    //vector <>
-    for (int i = 0; i < outs.size();i++){
-        o << get<0>(outs[i])<<", " <<get<1>(outs[i]) << ", " << get<2>(outs[i]) << endl;
-    }
-
-    //for ()
-    o.close();}
-
-    catch(const ERROR_IN_GATE_NAME &x){
+        sort(outs.begin(), outs.end(), compareTuples);
+        cout << get<0>(outs[0]) << endl;
+        ofstream o;
+        o.open("output_final.txt");
+        outs.erase(outs.begin(),outs.begin()+1);
+        for (int i = 0; i < outs.size();i++) {
+            o << get<0>(outs[i])<<", " <<get<1>(outs[i]) << ", " << get<2>(outs[i]) << endl;
+        }
+        o.close();
+    } catch(const ERROR_IN_GATE_NAME &x) {
         cout <<"Incompatibilites between lib and circ files have been found; " <<x.what() << " is declared in the circ file but not in the lib file.\n";
+    } catch(const ERROR_IN_OUT &y) {
+        cout << "Input " << y.what() << " has been found as an output, which is invalid !!";
     }
-    catch(const ERROR_IN_OUT &y){
-       cout << "Input " << y.what() << " has been found as an output, which is invalid !!";
-    }
+
+    return 0;
 }
