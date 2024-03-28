@@ -15,6 +15,19 @@ using namespace std;
 bool compareTuples(tuple<int, string, int> &a, tuple<int, string, int> &b) {
     return get<0>(a) < get<0>(b);
 }
+void removeSpaces(string &line) {
+    bool afterComma = false;
+    for (size_t i = 0; i < line.length(); ++i) {
+        if (line[i] == ',') {
+            afterComma = true;
+        } else if (line[i] == ' ' && !afterComma) {
+            line.erase(i, 1);
+            --i; // Adjust index after erasing a character
+        } else {
+            afterComma = false;
+        }
+    }
+}
 
 template <typename T>
 void printer(vector<T> &f){
@@ -208,20 +221,8 @@ void loadLibrary(const string& filename) {
     while (getline(file, line)) {
         // Remove spaces that are not after a comma
         bool afterComma = false;
-        line.erase(remove_if(line.begin(), line.end(), [&afterComma](char c) {
-            if (c == ',') {
-                afterComma = true;
-                return false;
-            }
-            if (c == ' ' && !afterComma) {
-                return true;
-            }
-            if (c != ' ') {
-                afterComma = false;
-            }
-            return false;
-        }), line.end());
-
+       removeSpaces(line);
+       cout<<line <<"\n";
         // Now process the modified line
         stringstream ss(line);
         string firstWord, expression, lastWord, word;
