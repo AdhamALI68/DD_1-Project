@@ -1,7 +1,7 @@
-#include <iostream>
 #include <stack>
-#include <string>
 #include <unordered_map>
+#include <stdexcept>
+#include <string>
 
 using namespace std;
 
@@ -16,26 +16,24 @@ private:
             case '|':
                 return 1;
             case '&':
-                return 2; // Adjusted for clarity, though not necessary
+                return 2;
             case '~':
-                return 3; // Highest precedence for unary operator
+                return 3;
             case '(':
             case ')':
-                return 0; // Parentheses have highest precedence
+                return 0;
         }
         return -1;
     }
 
-    // Overloaded evaluate function for unary operators
     bool evaluate(bool a, char op) {
         switch (op) {
             case '~':
                 return !a;
         }
-        return false; // Should never reach here
+        throw runtime_error("Invalid unary operator.");
     }
 
-    // Existing evaluate function for binary operators
     bool evaluate(bool a, bool b, char op) {
         switch (op) {
             case '&':
@@ -43,10 +41,9 @@ private:
             case '|':
                 return a || b;
         }
-        return false; // Should never reach here
+        throw runtime_error("Invalid binary operator.");
     }
 
-    // Function to extract the next operand (variable) from the expression
     string extractOperand(string& expression, int& pos) {
         string operand = "";
         while (pos < expression.length() && !isOperator(expression[pos])) {
@@ -66,13 +63,12 @@ public:
             char c = expression[i];
             if (!isOperator(c)) {
                 string operand = extractOperand(expression, i);
-                cout<<"operand "<<operand<<"\n";
                 if (variables.find(operand) != variables.end()) {
                     operands.push(variables[operand]);
                 } else {
-                    throw "Undefined variable: " + operand;
+                    throw runtime_error("Undefined variable: " + operand);
                 }
-                continue; // Skip to the next iteration
+                continue;
             }
             if (c == '(') {
                 operators.push(c);
@@ -91,7 +87,7 @@ public:
                     }
                     operators.pop();
                 }
-                operators.pop(); // Pop '('
+                operators.pop(); // Discard the '('
             } else if (isOperator(c)) {
                 while (!operators.empty() && precedence(c) <= precedence(operators.top())) {
                     if (operators.top() == '~') {
@@ -126,24 +122,6 @@ public:
             }
             operators.pop();
         }
-
         return operands.top();
     }
 };
-
-int main() {
-    LogicalExpressionEvaluator evaluator;
-    unordered_map<string, bool> variables = {
-        {"A", false},
-        {"B", false}
-    };
-    string expression = "(A&~B)|(B&~A)";
-    try {
-        bool result = evaluator.evaluateInfixExpression(expression, variables);
-        cout << "Result: " << (result ? "true" : "false") << endl;
-    } catch (const char* msg) {
-        cout << "Error: " << msg << endl;
-    }
-
-    return 0;
-}
