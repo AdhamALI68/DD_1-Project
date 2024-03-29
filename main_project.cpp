@@ -9,7 +9,7 @@
 #include <stack>
 #include <string>
 #include <exception>
-
+#include<queue>
 
 using namespace std;
 bool compareTuples(tuple<int, string, int> &a, tuple<int, string, int> &b) {
@@ -28,6 +28,8 @@ void removeSpaces(string &line) {
         }
     }
 }
+
+
 
 template <typename T>
 void printer(vector<T> &f){
@@ -209,7 +211,46 @@ struct Component {
 
 // Define a map to store components
 unordered_map<string, Component> component_library;
+void delayfunction(vector<vector<string>>& components, unordered_map<string, int> operation,unordered_map<string, int> &delay_map,vector<string>connected){
+    for (int i = 0; i < components.size(); i++) {
+            string output="";
+            string gatename="";
+            vector<string>in;
+            vector<bool>inp;
+            int max_delay = 0; // Initialize the maximum delay for this component
+            for (int j = 0; j <components[i].size(); j++) {
+                if(operation[components[i][j]]!=0) {
+                    if(gatename=="") {
+                        gatename=components[i][j];
+                        gatename.pop_back();
+                    }
+                    output=components[i][j+1];
+                    j++;
+                    continue;
+                }
 
+                if(output!="") {
+                    if(components[i][j][components[i][j].length()-1]==',') {
+                        components[i][j].erase(components[i][j].length()-1);
+                    }
+                    in.push_back(components[i][j]);
+                }
+            }
+            for (int k = 0; k < in.size(); k++) {
+                // inp.push_back(input_map[in[k]]);
+                // Update the maximum delay for this component based on the input wire delays
+                if (delay_map.find(in[k]) != delay_map.end()) {
+                    max_delay = max(max_delay, delay_map[in[k]]);
+                }
+            }
+            string z=gatename+',';
+            output.pop_back();
+    auto it = std::find(connected.begin(), connected.end(), output);
+            if(it != connected.end()){
+            delay_map[output] = max_delay+ component_library[z].delay_ps;}
+            in.clear();
+        }
+}
 // Load library file and store propagation delay and number of inputs
 void loadLibrary(const string& filename) {
     ifstream file(filename);
@@ -304,8 +345,8 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
     file.close();
 }
 
-void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<string, int> &input_map, vector<vector<string>> ins, int sd,unordered_map<string, int> delay_map,int delay, std::ofstream& outputFile,    vector <tuple <int ,string, int>> &outs, vector<tuple<int, char, int>> readings) {
-
+void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<string, int> &input_map, vector<vector<string>> ins, int sd,unordered_map<string, int> delay_map, std::ofstream& outputFile,    vector <tuple <int ,string, int>> &outs, string c, int delay,vector<vector<string>>& components, unordered_map<string, int> operation) {
+cout<<"\n\n\n\n"<<c<<"  \n\n\n\n\n\n";
 for (const auto& t : vec) {
         std::cout << "Tuple: {" << get<0>(t) << ", " << get<1>(t) << ", [";
 
@@ -317,36 +358,50 @@ for (const auto& t : vec) {
         std::cout << "]} \n";
     }
 
-    stack<string> to_evaluate_the_changgates;
+    queue<string> to_evaluate_the_changgates;
     for(int i=0;i<ins.size();i++)
     {
-        for(int j=0;j<ins[j].size();j++)
+        for(int j=0;j<ins[i].size();j++)
         {
-            string letter= "";
-            letter+= (get<1>(readings[i]));
-            if(letter==ins[i][j])
+            if(c==ins[i][j])
             {
                 to_evaluate_the_changgates.push(get<1>(vec[i]));
             }
         }
     }
+    // while (!to_evaluate_the_changgates.empty())
+    // {
+    //     cout<<to_evaluate_the_changgates.top()<<"  \n";
+    //     to_evaluate_the_changgates.pop();
+    // }
+    
     vector<string> collect;
     stack<string> connected;
-    while(to_evaluate_the_changgates.empty()==false)
+
+    while(!to_evaluate_the_changgates.empty())
     {
         for(int i=0;i<ins.size();i++)
         {
-            for(int j=0;j<ins[j].size();j++)
+            for(int j=0;j<ins[i].size();j++)
             {
-                if(to_evaluate_the_changgates.top()==ins[i][j])
+                if(to_evaluate_the_changgates.front()==ins[i][j])
                 {
-                    collect.push_back(to_evaluate_the_changgates.top());
-                    to_evaluate_the_changgates.pop();
-                    connected.push(get<1>(vec[i]));
+                    to_evaluate_the_changgates.push(get<1>(vec[i]));
+                    // cout<<get<1>(vec[i])<<"\n";
                 }
             }
+            // cout<<endl;
         }
+        collect.push_back(to_evaluate_the_changgates.front());
+         to_evaluate_the_changgates.pop();
+        //  cout<<to_evaluate_the_changgates.front()<<"\n";
+
     }
+    cout<<"size  "<<collect.size();
+for (int i = 0; i < collect.size(); i++)
+{
+    cout<<collect[i]<<"conne   \n";
+}
 
     for (int i = 0; i < vec.size(); i++) {
         string gatename = std::get<0>(vec[i]);
@@ -384,13 +439,17 @@ for (const auto& t : vec) {
             z+=to_string(k+1);
             variables[z]=input_map[ins[i][k]];
         }
-        if(sd==0){
-            std::cout<<output<<"   "<<component_library[z].logic<<"\n";
-            input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
-                            outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
+        delayfunction(components,operation,delay_map,collect);
+            auto it = std::find(collect.begin(), collect.end(), output);
+            if(sd==0){
+            // std::cout<<output<<"   "<<component_library[z].logic<<"\n";
+            // input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
+            //                 outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
 
-             outs.push_back({delay_map[output]+delay , output , input_map[output]});
-        } else {
+            //  outs.push_back({delay_map[output]+delay , output , input_map[output]});
+        } 
+
+      else if(it != collect.end()){ 
             int zin=input_map[output];
             input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
             if(zin!=input_map[output]){
@@ -558,11 +617,13 @@ int main(int argc, char* argv[]) {
             std::cerr << "Failed to open output file." << std::endl;
             return 1;
         }
+  
 
         for (const auto& reading : readings) {
             string c="";
             int delay=get<0>(reading);
             c+=get<1>(reading);
+            cout<<c<<"nig";
             input_map[c]=get<2>(reading);
             vector<bool>vi;
             outputFile << delay_map[c]+delay << ", " << c << ", " << input_map[c] << "\n";
@@ -572,7 +633,7 @@ int main(int argc, char* argv[]) {
                     vi.push_back(x.second);
                 }
             }
-            funccall(vec, input_map, ins,sd++,delay_map,delay,outputFile,outs,readings);
+            funccall(vec, input_map, ins,sd++,delay_map,outputFile,outs,c,delay,components,operation);
         }
 
         sort(outs.begin(), outs.end(), compareTuples);
