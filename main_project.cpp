@@ -4,6 +4,7 @@
 #include <vector>
 #include <functional>
 #include <unordered_map>
+#include"Custom_gates.cpp"
 #include <tuple>
 #include <algorithm>
 #include <stack>
@@ -91,131 +92,6 @@ for (auto& it: m) {
     std::cout << it.first << "   " <<endl;
 }
 }
-
-
-class LogicalExpressionEvaluator {
-private:
-    bool isOperator(char c) {
-        return (c == '&' || c == '|' || c == '~' || c == '(' || c == ')');
-    }
-
-    int precedence(char c) { // we assign precedence for operators in case there are no parenthesis 
-        switch (c) {
-            case '|':
-                return 1;
-            case '&':
-                return 2; 
-            case '~':
-                return 3; // Highest precedence for unary operator
-            case '(':
-            case ')':
-                return 0; // Parentheses have highest precedence
-        }
-        return -1;
-    }
-
-    // Overloaded evaluate function for unary operators
-    bool evaluate(bool a, char op) {
-        switch (op) {
-            case '~':
-                return !a;
-        }
-        return false; // Should never reach here because there is only one case where we call this function when a='~'
-    }
-
-    // Existing evaluate function for binary operators
-    bool evaluate(bool a, bool b, char op) {
-        switch (op) {
-            case '&':// if the function is called for and
-                return a && b;
-            case '|':// if the function is called for or
-                return a || b;
-        }
-        return false; // Should never reach here because we only call this function for and, or because and, or, not are enough to construct any gate
-    }
-
-    // Function to extract the next operand (variable) from the expression because the operand could be more than one character, so this enables us to evaluate inputs such as i112
-    string extractOperand(string& expression, int& pos) {
-        string operand = "";
-        while (pos < expression.length() && !isOperator(expression[pos])) {// we read the string until we meet an operator or reach the end of the string, and this is why we deal with '(' as an operator
-            operand += expression[pos];
-            pos++;
-        }
-        return operand;
-    }
-
-public:
-    bool evaluateInfixExpression(string expression, unordered_map<string, bool>& variables ) {// the expression is the logical expression to be evaluated, the variables are the values of sybmols in the expression
-        stack<bool> operands;
-        stack<char> operators;
-        int i = 0;
-        
-        while (i < expression.length()) { // we stop when we finished reading the expression
-            char c = expression[i];
-            if (!isOperator(c)) {
-                string operand = extractOperand(expression, i);// we read the opreand if we didnot meet an operator
-                if (variables.find(operand) != variables.end()) {
-                    operands.push(variables[operand]); // if we did not find the operands' value 
-                } else {
-                    throw "Undefined variable: " + operand;
-                }
-                continue; // Skip to the next iteration
-            }
-            if (c == '(') {
-                operators.push(c);
-            } else if (c == ')') {
-                while (operators.top() != '(') {// Continue until matching opening parenthesis
-                    if (operators.top() == '~') {
-                        bool a = operands.top();
-                        operands.pop();
-                        operands.push(evaluate(a, operators.top()));
-                    } else {
-                        bool b = operands.top();
-                        operands.pop();
-                        bool a = operands.top();
-                        operands.pop();
-                        operands.push(evaluate(a, b, operators.top()));
-                    }
-                    operators.pop();
-                }
-                operators.pop();
-            } else if (isOperator(c)) {
-                while (!operators.empty() && precedence(c) <= precedence(operators.top())) {
-                    if (operators.top() == '~') {
-                        bool a = operands.top();
-                        operands.pop();
-                        operands.push(evaluate(a, operators.top()));
-                    } else {
-                        bool b = operands.top();
-                        operands.pop();
-                        bool a = operands.top();
-                        operands.pop();
-                        operands.push(evaluate(a, b, operators.top()));
-                    }
-                    operators.pop();
-                }
-                operators.push(c);
-            }
-            i++;
-        }
-
-        while (!operators.empty()) {
-            if (operators.top() == '~') {
-                bool a = operands.top();
-                operands.pop();
-                operands.push(evaluate(a, operators.top()));
-            } else {
-                bool b = operands.top();
-                operands.pop();
-                bool a = operands.top();
-                operands.pop();
-                operands.push(evaluate(a, b, operators.top()));
-            }
-            operators.pop();
-        }
-        return operands.top();
-    }
-};
 vector<tuple<int, char, int>> readFromFile(const string& filename) {// this function reads the .stim file
     vector<tuple<int, char, int>> readings;// we create a vector of tuple to store what we read from the files
     ifstream file(filename);
@@ -406,8 +282,6 @@ void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<strin
     }
     
     vector<string> collect;
-    stack<string> connected;
-
     while(!to_evaluate_the_changgates.empty())
     {
         for(int i=0;i<ins.size();i++)
