@@ -14,7 +14,7 @@ using namespace std;
 bool compareTuples(tuple<int, string, int> &a, tuple<int, string, int> &b) { // we create this custom function to be able to sort this tuple later
     return get<0>(a) < get<0>(b);
 }
-void removeSpaces(string &line) {// this function handels improper spacing in the .cir file , by removing all spaces that are not after a comma
+void removeSpaces(string &line) {// this function handles improper spacing in the .cir file, by removing all spaces that are not after a comma
     bool afterComma = false; 
     for (size_t i = 0; i < line.length(); ++i) {
         if (line[i] == ',') {
@@ -51,7 +51,7 @@ private:
         return (c == '&' || c == '|' || c == '~' || c == '(' || c == ')');
     }
 
-    int precedence(char c) { // we assign precedence for operators in case, there are no parenthesis 
+    int precedence(char c) { // we assign precedence for operators in case there are no parenthesis 
         switch (c) {
             case '|':
                 return 1;
@@ -72,7 +72,7 @@ private:
             case '~':
                 return !a;
         }
-        return false; // Should never reach here because there is only one case where we call this function, when a='~'
+        return false; // Should never reach here because there is only one case where we call this function when a='~'
     }
 
     // Existing evaluate function for binary operators
@@ -83,13 +83,13 @@ private:
             case '|':// if the function is called for or
                 return a || b;
         }
-        return false; // Should never reach here because we only call this function for and, or because and, or, not are enough to contruct any gate
+        return false; // Should never reach here because we only call this function for and, or because and, or, not are enough to construct any gate
     }
 
-    // Function to extract the next operand (variable) from the expression, because the operand could be more than one character so this enables us to evaluate inputs such as i112
+    // Function to extract the next operand (variable) from the expression because the operand could be more than one character, so this enables us to evaluate inputs such as i112
     string extractOperand(string& expression, int& pos) {
         string operand = "";
-        while (pos < expression.length() && !isOperator(expression[pos])) {// we read the string until we meet an operator, or reach the end of the string, and this is why we deal with '(' as an operator
+        while (pos < expression.length() && !isOperator(expression[pos])) {// we read the string until we meet an operator or reach the end of the string, and this is why we deal with '(' as an operator
             operand += expression[pos];
             pos++;
         }
@@ -116,7 +116,7 @@ public:
             if (c == '(') {
                 operators.push(c);
             } else if (c == ')') {
-                while (operators.top() != '(') {
+                while (operators.top() != '(') {// Continue until matching opening parenthesis
                     if (operators.top() == '~') {
                         bool a = operands.top();
                         operands.pop();
@@ -169,7 +169,7 @@ public:
     }
 };
 vector<tuple<int, char, int>> readFromFile(const string& filename) {// this function reads the .stim file
-    vector<tuple<int, char, int>> readings;// we create vector of tuple to store what we read from the files
+    vector<tuple<int, char, int>> readings;// we create a vector of tuple to store what we read from the files
     ifstream file(filename);
     string line;
 
@@ -179,7 +179,7 @@ vector<tuple<int, char, int>> readFromFile(const string& filename) {// this func
 
         int value1;// represents the time stamp
         char value2;//represent the input
-        int value3;//represent the value of the input
+        int value3;//represents the value of the input
 
         // Read comma-separated values from the line
         if (getline(ss, token, ','))
@@ -203,9 +203,9 @@ struct Component { // we use this struct to record our readings from the .lib fi
     string logic;
 };
 
-// Define a map to store components, we associate each gates with a component that contains num_inputs, logic, and delay of the gate
+// Define a map to store components. We associate each gate with a component that contains num_inputs, logic, and delay of the gate
 unordered_map<string, Component> component_library;
-void delayfunction(vector<vector<string>>& components, unordered_map<string, int> operation,unordered_map<string, int> &delay_map,vector<string>connected){// we use this function to calculate the delay of each gate while considering the input that has changed because some gates input will not change so they will not be in the acitivitylist, and so they will not have a delay
+void delayfunction(vector<vector<string>>& components, unordered_map<string, int> operation,unordered_map<string, int> &delay_map,vector<string>connected){// we use this function to calculate the delay of each gate while considering the input that has changed because some gates input will not change so they will not be in the activity list, and so they will not have a delay
     for (int i = 0; i < components.size(); i++) {
             string output="";
             string gatename="";
@@ -272,15 +272,14 @@ void loadLibrary(const string& filename) {
         expression = words[2];
         lastWord = words[words.size() - 1];
         expression.pop_back();
-        // std::cout << "first " << firstWord << " expression " << expression <<"last word " <<lastWord << endl;
 
         int lastInteger = std::stoi(lastWord);
-        // Assuming component_library is declared as std::map<std::string, std::tuple<char, int, std::string>> component_library;
+        // Assuming component_library is declared
         component_library[firstWord] = {firstWord[0], lastInteger, expression};
     }
     file.close();
     }
-
+// Function to parse circuit file and extract inputs, components, and connections
 void parse_cir_file(const string& filename, vector<string>& inputs, vector<vector<string>>& components, vector<vector<string>>& ins) {
     int i=0;
     ifstream file(filename);
@@ -351,11 +350,6 @@ void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<strin
             }
         }
     }
-    // while (!to_evaluate_the_changgates.empty())
-    // {
-    //     cout<<to_evaluate_the_changgates.top()<<"  \n";
-    //     to_evaluate_the_changgates.pop();
-    // }
     
     vector<string> collect;
     stack<string> connected;
@@ -369,14 +363,11 @@ void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<strin
                 if(to_evaluate_the_changgates.front()==ins[i][j])
                 {
                     to_evaluate_the_changgates.push(get<1>(vec[i]));
-                    // cout<<get<1>(vec[i])<<"\n";
                 }
             }
-            // cout<<endl;
         }
         collect.push_back(to_evaluate_the_changgates.front());
          to_evaluate_the_changgates.pop();
-        //  cout<<to_evaluate_the_changgates.front()<<"\n";
 
     }
     cout<<"size  "<<collect.size();
@@ -400,7 +391,8 @@ for (int i = 0; i < collect.size(); i++)
         int x = 0;
         bool flag = false;
         vector <int> nums;
-        for (int k =0 ; k < to_insert.length(); k++){
+        for (int k =0 ; k < to_insert.length(); k++)
+        {
             if ((to_insert[k] >= 48 && to_insert[k] <= 57)){
                 temp += to_insert[k];
                 flag = true;
@@ -422,19 +414,13 @@ for (int i = 0; i < collect.size(); i++)
             variables[z]=input_map[ins[i][k]];
         }
         unordered_map<string, int> delay_map;
-            for (const auto& pair : delay_ma) {
-delay_map[pair.first]=0; 
-   }
+        for (const auto& pair : delay_ma) 
+        {
+            delay_map[pair.first]=0; 
+        }
         delayfunction(components,operation,delay_map,collect);
             auto it = std::find(collect.begin(), collect.end(), output);
-            if(sd==0){continue;
-                        // std::cout<<output<<"   "<<component_library[z].logic<<"\n";
-            // input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
-            //                 outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
-
-            //  outs.push_back({delay_map[output]+delay , output , input_map[output]});
-
-                } // we skip  the base case when the inputs are 0s to see the output for the base case a=0,b=0,c=0,d=0, but if we removed this comment then we willbe taking it into consideration
+            if(sd==0){continue;} // we skip  the base case when the inputs are 0s to see the output for the base case a=0,b=0,c=0,d=0, but if we removed this comment then we willbe taking it into consideration
 
       else if(it != collect.end()){ 
             int zin=input_map[output];
@@ -446,11 +432,11 @@ delay_map[pair.first]=0;
         }
     }
 }
-
+// Function to check for violations between component library and circuit file
 vector<vector<tuple<bool,string>>> violation_check(unordered_map<string, Component> component_library , unordered_map<string, int> component_circuit , vector<vector<string>> components, vector<string> inputs){
 vector <string> gates_lib;
 vector <string> output_gates;
-vector <vector<tuple<bool,string>>> res;
+vector <vector<tuple<bool,string>>> res; // Vector to store violation check results
 vector<tuple<bool, string>> t;
 bool flag,bool2,pushed = 0;
 string invalid_in_out = "\0";
@@ -478,7 +464,6 @@ for (auto &in: inputs){
     if (bool2 == true){break;}
     for (auto &z: output_gates){
         if (in == z.substr(0,z.length()-1)){
-            // std::cout << "in   " << in << "      z" << z <<" value:" << (in == z.substr(0,z.length()-1)); 
             bool2 = true;
             invalid_in_out = in;
             break;
@@ -496,13 +481,13 @@ class ERROR_IN_OUT: public logic_error{// if one of the inputs declared at the s
     ERROR_IN_OUT(string x): logic_error(x){}
 };
 
-class ERROR_IN_GATE_NAME : public logic_error{// if one of the gates are used in the .cir file with no deifnition in the .lib file
+class ERROR_IN_GATE_NAME : public logic_error{// if one of the gates is used in the .cir file with no definition in the .lib file
     public:
     ERROR_IN_GATE_NAME(string x): logic_error(x){}
 };
 
 
-int main(int argc, char* argv[]) {// these patameters enable us to use the terminal to run our code
+int main(int argc, char* argv[]) {// these parameters enable us to use the terminal to run our code
     if (argc != 4) {
         cerr << "Usage: " << argv[0] << " <library_file> <circuit_file> <stimulus_file>" << endl;
         return 1;
@@ -510,7 +495,7 @@ int main(int argc, char* argv[]) {// these patameters enable us to use the termi
     string library_file = argv[1];
     string circuit_file = argv[2];
     string stimulus_file = argv[3];
-    // Load library file and store propagation delay and number of inputs, using the command from the terminal
+    // Load library file and store propagation delay and number of inputs using the command from the terminal
     loadLibrary(library_file); 
     vector<tuple<string,string,vector<bool>>> vec;
     vector<string> inputs;
