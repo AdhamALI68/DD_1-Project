@@ -35,9 +35,9 @@ def graph_all_outs(t, two_d_list):
     
     for i, ax in enumerate(axes):
         Graph_one_line(ax, t, two_d_list[i], i * 3)
+        axes[i].locator_params(axis = 'y', nbins= 2)
 
     fig.text(0.5, 0.01, 'Time (ps)', ha='center', va='center')
     fig.text(0.06, 0.5, 'Output', ha='center', va='center', rotation='vertical')
-
     plt.tight_layout(pad = 5.0)
     plt.show()

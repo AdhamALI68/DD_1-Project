@@ -32,14 +32,14 @@ void removeSpaces(string &line) {
 template <typename T>
 void printer(vector<T> &f){
 for (T i: f){
-cout << i << endl;
+std::cout << i << endl;
 }
 }
 
 template <typename Z>
 void map_printer(unordered_map<string, Z> m){
 for (auto& it: m) {
-    cout << it.first << "   " <<endl;
+    std::cout << it.first << "   " <<endl;
 }
 }
 
@@ -105,7 +105,7 @@ public:
             char c = expression[i];
             if (!isOperator(c)) {
                 string operand = extractOperand(expression, i);
-                        cout<<operand;
+                        std::cout<<operand;
                 if (variables.find(operand) != variables.end()) {
                     operands.push(variables[operand]);
                 } else {
@@ -222,7 +222,7 @@ void loadLibrary(const string& filename) {
         // Remove spaces that are not after a comma
         bool afterComma = false;
        removeSpaces(line);
-       cout<<line <<"\n";
+       std::cout<<line <<"\n";
         // Now process the modified line
         stringstream ss(line);
         string firstWord, expression, lastWord, word;
@@ -237,7 +237,7 @@ void loadLibrary(const string& filename) {
         expression = words[2];
         lastWord = words[words.size() - 1];
         expression.pop_back();
-        // cout << "first " << firstWord << " expression " << expression <<"last word " <<lastWord << endl;
+        // std::cout << "first " << firstWord << " expression " << expression <<"last word " <<lastWord << endl;
 
         int lastInteger = std::stoi(lastWord);
         // Assuming component_library is declared as std::map<std::string, std::tuple<char, int, std::string>> component_library;
@@ -304,8 +304,49 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
     file.close();
 }
 
+void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<string, int> &input_map, vector<vector<string>> ins, int sd,unordered_map<string, int> delay_map,int delay, std::ofstream& outputFile,    vector <tuple <int ,string, int>> &outs, vector<tuple<int, char, int>> readings) {
 
-void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<string, int> &input_map, vector<vector<string>> ins, int sd,unordered_map<string, int> delay_map,int delay, std::ofstream& outputFile,    vector <tuple <int ,string, int>> &outs) {
+for (const auto& t : vec) {
+        std::cout << "Tuple: {" << get<0>(t) << ", " << get<1>(t) << ", [";
+
+        // Iterate over the vector<bool>
+        const auto& boolVector = std::get<2>(t);
+        for (bool b : boolVector) {
+            std::cout << (b ? "true" : "false") << ", ";
+        }
+        std::cout << "]} \n";
+    }
+
+    stack<string> to_evaluate_the_changgates;
+    for(int i=0;i<ins.size();i++)
+    {
+        for(int j=0;j<ins[j].size();j++)
+        {
+            string letter= "";
+            letter+= (get<1>(readings[i]));
+            if(letter==ins[i][j])
+            {
+                to_evaluate_the_changgates.push(get<1>(vec[i]));
+            }
+        }
+    }
+    vector<string> collect;
+    stack<string> connected;
+    while(to_evaluate_the_changgates.empty()==false)
+    {
+        for(int i=0;i<ins.size();i++)
+        {
+            for(int j=0;j<ins[j].size();j++)
+            {
+                if(to_evaluate_the_changgates.top()==ins[i][j])
+                {
+                    collect.push_back(to_evaluate_the_changgates.top());
+                    to_evaluate_the_changgates.pop();
+                    connected.push(get<1>(vec[i]));
+                }
+            }
+        }
+    }
 
     for (int i = 0; i < vec.size(); i++) {
         string gatename = std::get<0>(vec[i]);
@@ -344,7 +385,7 @@ void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<strin
             variables[z]=input_map[ins[i][k]];
         }
         if(sd==0){
-            cout<<output<<"   "<<component_library[z].logic<<"\n";
+            std::cout<<output<<"   "<<component_library[z].logic<<"\n";
             input_map[output]=evaluator.evaluateInfixExpression(component_library[z].logic, variables,input_map);
                             outputFile << delay_map[output]+delay << ", " << output << ", " << input_map[output] << "\n";
 
@@ -391,7 +432,7 @@ for (auto &in: inputs){
     if (bool2 == true){break;}
     for (auto &z: output_gates){
         if (in == z.substr(0,z.length()-1)){
-            // cout << "in   " << in << "      z" << z <<" value:" << (in == z.substr(0,z.length()-1)); 
+            // std::cout << "in   " << in << "      z" << z <<" value:" << (in == z.substr(0,z.length()-1)); 
             bool2 = true;
             invalid_in_out = in;
             break;
@@ -505,7 +546,7 @@ int main(int argc, char* argv[]) {
             in.clear();
         }
         vector <tuple <int ,string, int>> outs;
-        cout << "Propagation Delays:" << endl;
+        std::cout << "Propagation Delays:" << endl;
 
         vector<tuple<int, char, int>> readings = readFromFile(stimulus_file);
         tuple<int, char, int>v{0,'A',0};
@@ -531,11 +572,11 @@ int main(int argc, char* argv[]) {
                     vi.push_back(x.second);
                 }
             }
-            funccall(vec, input_map, ins,sd++,delay_map,delay,outputFile,outs);
+            funccall(vec, input_map, ins,sd++,delay_map,delay,outputFile,outs,readings);
         }
 
         sort(outs.begin(), outs.end(), compareTuples);
-        cout << get<0>(outs[0]) << endl;
+        std::cout << get<0>(outs[0]) << endl;
         ofstream o;
         o.open("output_final.txt");
         outs.erase(outs.begin(),outs.begin()+1);
@@ -544,9 +585,9 @@ int main(int argc, char* argv[]) {
         }
         o.close();
     } catch(const ERROR_IN_GATE_NAME &x) {
-        cout <<"Incompatibilites between lib and circ files have been found; " <<x.what() << " is declared in the circ file but not in the lib file.\n";
+        std::cout <<"Incompatibilites between lib and circ files have been found; " <<x.what() << " is declared in the circ file but not in the lib file.\n";
     } catch(const ERROR_IN_OUT &y) {
-        cout << "Input " << y.what() << " has been found as an output, which is invalid !!";
+        std::cout << "Input " << y.what() << " has been found as an output, which is invalid !!";
     }
 
     return 0;
