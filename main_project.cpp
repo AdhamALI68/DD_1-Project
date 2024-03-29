@@ -11,6 +11,54 @@
 #include <exception>
 #include<queue>
 using namespace std;
+void addSpaceAfterComma(std::string& input) {
+    for (size_t i = 0; i < input.length(); ++i) {
+        if (input[i] == ',' && i + 1 < input.length() && input[i + 1] != ' ') {
+            input.insert(i + 1, " ");
+        }
+    }
+}
+void modifyFile(const std::string& inputFilename, const std::string& outputFilename) {
+    std::ifstream inputFile(inputFilename);
+    if (!inputFile.is_open()) {
+        std::cerr << "Error: Unable to open input file." << std::endl;
+        return;
+    }
+
+    std::ofstream outputFile(outputFilename);
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Unable to create output file." << std::endl;
+        inputFile.close();
+        return;
+    }
+
+    std::string line;
+    while (std::getline(inputFile, line)) {
+        size_t commaCount = std::count(line.begin(), line.end(), ',');
+        int n=0;
+       
+        
+        if (commaCount > 3) {
+            size_t pos = line.find(',', line.find(',', line.find(',') + 1) + 1);
+             while (line[pos+n+2]!=' ')
+        {
+            n++;
+           std:: cout<<n;
+        }
+            if (pos != std::string::npos) {
+                outputFile << line.substr(0, pos + n+3) << std::endl;
+                outputFile << line.substr(pos + n+3) << std::endl;
+            } else {
+                outputFile << line << std::endl;
+            }
+        } else {
+            outputFile << line << std::endl;
+        }
+    }
+
+    inputFile.close();
+    outputFile.close();
+}
 bool compareTuples(tuple<int, string, int> &a, tuple<int, string, int> &b) { // we create this custom function to be able to sort this tuple later
     return get<0>(a) < get<0>(b);
 }
@@ -174,6 +222,8 @@ vector<tuple<int, char, int>> readFromFile(const string& filename) {// this func
     string line;
 
     while (getline(file, line)) {
+        removeSpaces(line);
+        addSpaceAfterComma(line);
         stringstream ss(line);
         string token;
 
@@ -256,8 +306,9 @@ void loadLibrary(const string& filename) {
     while (getline(file, line)) {
         // Remove spaces that are not after a comma
         bool afterComma = false;
-       removeSpaces(line);
-       std::cout<<line <<"\n";
+        removeSpaces(line);
+        addSpaceAfterComma(line);
+        cout<<line<<"\n";
         // Now process the modified line
         stringstream ss(line);
         string firstWord, expression, lastWord, word;
@@ -292,6 +343,9 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
     bool reading_components = false;
     while (getline(file, line))
     {
+        removeSpaces(line);
+        addSpaceAfterComma(line);
+
         if (line == "INPUTS:") {
             reading_inputs = true;
             continue;
@@ -370,11 +424,6 @@ void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<strin
          to_evaluate_the_changgates.pop();
 
     }
-    cout<<"size  "<<collect.size();
-for (int i = 0; i < collect.size(); i++)
-{
-    cout<<collect[i]<<"conne   \n";
-}
 
     for (int i = 0; i < vec.size(); i++) {
         string gatename = std::get<0>(vec[i]);
@@ -496,7 +545,8 @@ int main(int argc, char* argv[]) {// these parameters enable us to use the termi
     string circuit_file = argv[2];
     string stimulus_file = argv[3];
     // Load library file and store propagation delay and number of inputs using the command from the terminal
-    loadLibrary(library_file); 
+    modifyFile(library_file,"o");
+    loadLibrary("o"); 
     vector<tuple<string,string,vector<bool>>> vec;
     vector<string> inputs;
     vector<vector<string>> components;
@@ -591,7 +641,6 @@ int main(int argc, char* argv[]) {// these parameters enable us to use the termi
             string c="";
             int delay=get<0>(reading);
             c+=get<1>(reading);
-            cout<<c<<"nig";
             input_map[c]=get<2>(reading);
             vector<bool>vi;
             outputFile << delay_map[c]+delay << ", " << c << ", " << input_map[c] << "\n";
