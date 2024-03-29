@@ -345,7 +345,7 @@ void parse_cir_file(const string& filename, vector<string>& inputs, vector<vecto
     file.close();
 }
 
-void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<string, int> &input_map, vector<vector<string>> ins, int sd,unordered_map<string, int> delay_map, std::ofstream& outputFile,    vector <tuple <int ,string, int>> &outs, string c, int delay,vector<vector<string>>& components, unordered_map<string, int> operation) {
+void funccall(vector<tuple<string,string,vector<bool>>> vec, unordered_map<string, int> &input_map, vector<vector<string>> ins, int sd,unordered_map<string, int> delay_ma, std::ofstream& outputFile,    vector <tuple <int ,string, int>> &outs, string c, int delay,vector<vector<string>>& components, unordered_map<string, int> operation) {
 cout<<"\n\n\n\n"<<c<<"  \n\n\n\n\n\n";
 for (const auto& t : vec) {
         std::cout << "Tuple: {" << get<0>(t) << ", " << get<1>(t) << ", [";
@@ -439,6 +439,11 @@ for (int i = 0; i < collect.size(); i++)
             z+=to_string(k+1);
             variables[z]=input_map[ins[i][k]];
         }
+        unordered_map<string, int> delay_map;
+            for (const auto& pair : delay_ma) {
+delay_map[pair.first]=0; 
+   }
+
         delayfunction(components,operation,delay_map,collect);
             auto it = std::find(collect.begin(), collect.end(), output);
             if(sd==0){
