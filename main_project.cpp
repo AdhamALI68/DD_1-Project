@@ -44,7 +44,6 @@ void modifyFile(const std::string& inputFilename, const std::string& outputFilen
              while (line[pos+n+2]!=' ')
         {
             n++;
-           std:: cout<<n;
         }
             if (pos != std::string::npos) {
                 outputFile << line.substr(0, pos + n+3) << std::endl;
@@ -184,7 +183,6 @@ void loadLibrary(const string& filename) {
         bool afterComma = false;
         removeSpaces(line);
         addSpaceAfterComma(line);
-        cout<<line<<"\n";
         // Now process the modified line
         stringstream ss(line);
         string firstWord, expression, lastWord, word;
@@ -451,6 +449,13 @@ int main(int argc, char* argv[]) {// these parameters enable us to use the termi
         if (get<0>(res[1][0]) == 1) {
             throw ERROR_IN_OUT(get<1>(res[1][0]));
         }
+        /*for(int i=0; i<ins.size();i++)
+        {
+            for(int j=0;j<ins[i].size();j++)
+            {
+                if(ins[i][j]==input)
+            }
+        }*/
 
         //Example usage:
         //Printing the input map
@@ -497,7 +502,6 @@ int main(int argc, char* argv[]) {// these parameters enable us to use the termi
             in.clear();
         }
         vector <tuple <int ,string, int>> outs;
-        std::cout << "Propagation Delays:" << endl;
 
         vector<tuple<int, char, int>> readings = readFromFile(stimulus_file);
         tuple<int, char, int>v{0,'A',0};
@@ -528,14 +532,14 @@ int main(int argc, char* argv[]) {// these parameters enable us to use the termi
         }
 
         sort(outs.begin(), outs.end(), compareTuples);
-        std::cout << get<0>(outs[0]) << endl;
         ofstream o;
-        o.open("out.sim");
+        o.open("Graphing/out.sim");
         outs.erase(outs.begin(),outs.begin()+1);
         for (int i = 0; i < outs.size();i++) {
             o << get<0>(outs[i])<<", " <<get<1>(outs[i]) << ", " << get<2>(outs[i]) << endl;
         }
         o.close();
+        cout << "RUN SUCCESSFULLY !!";
     } catch(const ERROR_IN_GATE_NAME &x) {
         std::cout <<"Incompatibilites between lib and circ files have been found; " <<x.what() << " is declared in the circ file but not in the lib file.\n";
     } catch(const ERROR_IN_OUT &y) {
