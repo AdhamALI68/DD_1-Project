@@ -25,5 +25,7 @@ command1 = "g++ -o main_project main_project.cpp"
 execute_command(command1)
 
 # Second command
-command2 = "main_project cells.lib 2.cir 2.stim"
+command2 = "main_project tests/cells.lib tests/2.cir tests/1.stim"
 execute_command(command2)
+command3="code out.sim"
+execute_command(command3)

@@ -530,7 +530,7 @@ int main(int argc, char* argv[]) {// these parameters enable us to use the termi
         sort(outs.begin(), outs.end(), compareTuples);
         std::cout << get<0>(outs[0]) << endl;
         ofstream o;
-        o.open("output_final.txt");
+        o.open("out.sim");
         outs.erase(outs.begin(),outs.begin()+1);
         for (int i = 0; i < outs.size();i++) {
             o << get<0>(outs[i])<<", " <<get<1>(outs[i]) << ", " << get<2>(outs[i]) << endl;

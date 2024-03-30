@@ -1,5 +1,0 @@
-INPUTS:
-A
-B
-COMPONENTS:
-G0, XOR2, w1, A, B
