@@ -4,8 +4,8 @@ B
 C
 D
 COMPONENTS:
-G0, XOR2, W0, i1, i2
-G1, NOT, W1, i2
-G2, XOR2, W2, i3, i4
-G3, OR2, W2, W0, W1
-G4, OR2, W2, W3, W2
+G0, XOR2, W0, A, B
+G1, NOT, W1, B
+G2, XOR2, W2, C, D
+G3, OR2, W3, W0, W1
+G4, OR2, W4, W3, W2
