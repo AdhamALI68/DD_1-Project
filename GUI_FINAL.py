@@ -1,76 +1,86 @@
 import tkinter as tk
+from tkinter import filedialog, messagebox
 import subprocess
 import string
-from tkinter import filedialog
+
+# Define colors
+bg_color = "#334257"  # Background color for the window
+widget_bg_color = "#476072"  # Background color for widgets
+text_color = "#FFFFFF"  # Text color
+button_color = "#FFD32D"  # Button background color
+button_text_color = bg_color  # Button text color
+error_color = "#FF5959"  # Error message background color
 
 file_names = []
+
 def extractor(s):
-# Find the last occurrence of '/' to get the index of the file name
     last_slash_index = s.rfind('/')
-# Extract the substring starting from the index of the last occurrence of '/'
     file_name = s[last_slash_index + 1:]
     return file_name
 
-
 def execute_command(command_string):
     try:
-        # Execute the command in the shell, capture output
         result = subprocess.run(command_string, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        # Decode the output bytes to string
         output = result.stdout.decode('utf-8')
         error = result.stderr.decode('utf-8')
         
-        # Print output and error, if any
         if output:
-            print("Output:")
-            print(output)
+            messagebox.showinfo("Output", output)
         if error:
-            print("Error:")
-            print(error)
-            
+            messagebox.showerror("Error", error)
     except subprocess.CalledProcessError as e:
-        # Handle errors
-        print(f"Error executing command '{command_string}': {e}")
-
-execute_command("g++ -o main_project main_project.cpp")
+        messagebox.showerror("Execution Error", f"Error executing command '{command_string}': {e}")
 
 def go():
-    command2 = ".\main_project " + extractor(file_names[0]) + " " + extractor(file_names[1])+ " " + extractor(file_names[2])
+    if len(file_names) < 3:
+        messagebox.showwarning("Warning", "Please upload all three required files.")
+        return
+    execute_command("g++ -o main_project main_project.cpp")
+    command2 = ".\\main_project tests/" + extractor(file_names[0]) + " tests/" + extractor(file_names[1]) + " tests/" + extractor(file_names[2])
     execute_command(command2)
-    lst = []
 
+def go_2():
+    execute_command("code out.sim")
+    execute_command("python Graphing/simulation_graphing.py")
 
 def upload_file():
     filename = filedialog.askopenfilename()
     if filename:
-        label.config(text="File uploaded: " + filename)
         file_names.append(filename)
-    else:
-        label.config(text="No file selected.")
+        update_uploaded_files_label()
 
-# Create the main window
+def update_uploaded_files_label():
+    files = '\n'.join([extractor(fn) for fn in file_names])
+    label.config(text=f"Uploaded Files:\n{files}")
+
 root = tk.Tk()
-root.title("File Uploader")
+root.title("Logic Simulator")
+root.config(bg=bg_color)
 
-# Create a label to display the uploaded file path
-label = tk.Label(root, text="No file selected.", padx=10, pady=10)
+title_frame = tk.Frame(root, bg=bg_color)
+title_frame.pack(padx=10, pady=(10, 0))
+project_title = tk.Label(title_frame, text="Logic Simulator", bg=bg_color, fg=text_color, font=("Helvetica", 24))
+project_title.pack()
+
+frame = tk.Frame(root, bg=bg_color)
+frame.pack(padx=10, pady=10)
+
+label = tk.Label(frame, text="No files uploaded.", padx=10, pady=10, bg=widget_bg_color, fg=text_color, font=("Helvetica", 12))
 label.pack()
 
-# Create a button to trigger file upload
-button = tk.Button(root, text="Upload LIB File", command=upload_file)
-button.pack()
+button_frame = tk.Frame(root, bg=bg_color)
+button_frame.pack(pady=10)
 
-button = tk.Button(root, text="Upload CIR File", command=upload_file)
-button.pack()
+upload_buttons = [
+    ("Upload LIB File", upload_file),
+    ("Upload CIR File", upload_file),
+    ("Upload STIM File", upload_file),
+    ("Run Code", go),
+    ("Open Simulation File", go_2)
+]
 
-button = tk.Button(root, text="Upload STIM File", command=upload_file)
-button.pack()
-
-button = tk.Button(root, text="Run Code", command=go)
-button.pack()
-
-button = tk.Button(root, text="Simulation File", command=upload_file)
-button.pack()
+for text, command in upload_buttons:
+    button = tk.Button(button_frame, text=text, command=command, bg=button_color, fg=button_text_color, font=("Helvetica", 14), height=2, width=20)
+    button.pack(fill=tk.X, pady=2, padx=10)
 
 root.mainloop()
-# Run the GUI
